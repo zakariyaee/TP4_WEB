@@ -1,92 +1,68 @@
 <?php
+// actions/admin-respo/delete_terrain.php
 require_once '../../config/database.php';
+require_once '../../check_auth.php';
+
+checkAdminOrRespo();
 
 header('Content-Type: application/json');
 
-// Vérifier que c'est une requête POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Méthode non autorisée'
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
 try {
-    // Récupérer les données JSON
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (empty($data['id_terrain'])) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'ID du terrain manquant'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'ID du terrain manquant']);
         exit;
     }
     
-    $id = $data['id_terrain'];
-    
     // Vérifier que le terrain existe
-    $stmt = $pdo->prepare("SELECT id_terrain FROM terrain WHERE id_terrain = :id");
-    $stmt->execute([':id' => $id]);
+    $stmt = $pdo->prepare("SELECT id_terrain, id_responsable FROM terrain WHERE id_terrain = :id");
+    $stmt->execute([':id' => $data['id_terrain']]);
+    $terrain = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$stmt->fetch()) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Terrain non trouvé'
-        ]);
+    if (!$terrain) {
+        echo json_encode(['success' => false, 'message' => 'Terrain non trouvé']);
+        exit;
+    }
+    
+    // Vérification des permissions
+    if ($_SESSION['user_role'] === 'responsable' && $terrain['id_responsable'] !== $_SESSION['user_email']) {
+        echo json_encode(['success' => false, 'message' => 'Vous n\'avez pas permission de supprimer ce terrain']);
         exit;
     }
     
     // Vérifier s'il y a des réservations actives
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM reservation 
-        WHERE id_terrain = :id 
-        AND statut IN ('en_attente', 'confirmee')
-        AND date_reservation >= NOW()
-    ");
-    $stmt->execute([':id' => $id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM reservation WHERE id_terrain = :id 
+                           AND statut IN ('en_attente', 'confirmee') AND date_reservation >= NOW()");
+    $stmt->execute([':id' => $data['id_terrain']]);
     $result = $stmt->fetch();
     
     if ($result['count'] > 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Impossible de supprimer ce terrain car il a des réservations actives'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Impossible de supprimer ce terrain car il a des réservations actives']);
         exit;
     }
     
     // Supprimer le terrain
     $stmt = $pdo->prepare("DELETE FROM terrain WHERE id_terrain = :id");
-    $result = $stmt->execute([':id' => $id]);
+    $result = $stmt->execute([':id' => $data['id_terrain']]);
     
     if ($result) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Terrain supprimé avec succès'
-        ]);
+        echo json_encode(['success' => true, 'message' => 'Terrain supprimé avec succès']);
     } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Erreur lors de la suppression du terrain'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression du terrain']);
     }
     
 } catch (PDOException $e) {
     error_log("Erreur delete_terrain: " . $e->getMessage());
-    
-    // Vérifier si c'est une erreur de contrainte de clé étrangère
     if ($e->getCode() == '23000') {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Impossible de supprimer ce terrain car il est lié à d\'autres données (créneaux, tournois...)'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Impossible de supprimer ce terrain car il est lié à d\'autres données']);
     } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Erreur lors de la suppression du terrain'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression du terrain']);
     }
 }
 ?>

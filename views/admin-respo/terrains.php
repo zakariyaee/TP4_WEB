@@ -156,7 +156,7 @@ $pageTitle = "Gestion des Terrains";
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Responsable *</label>
-                    <select id="id_responsable" name="id_responsable" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <select id="id_responsable" name="id_responsable"  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                         <option value="">Sélectionner un responsable...</option>
                     </select>
                 </div>
