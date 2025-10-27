@@ -3,7 +3,6 @@ require_once '../../config/database.php';
 
 header('Content-Type: application/json');
 
-// Vérifier que c'est une requête POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -13,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Récupérer les données JSON
     $data = json_decode(file_get_contents('php://input'), true);
     
     // Validation de l'ID
@@ -47,10 +45,11 @@ try {
     }
     
     // Vérifier que le terrain existe
-    $stmt = $pdo->prepare("SELECT id_terrain FROM terrain WHERE id_terrain = :id");
+    $stmt = $pdo->prepare("SELECT id_terrain, image FROM terrain WHERE id_terrain = :id");
     $stmt->execute([':id' => $data['id_terrain']]);
+    $terrain = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$stmt->fetch()) {
+    if (!$terrain) {
         echo json_encode([
             'success' => false,
             'message' => 'Terrain non trouvé'
@@ -71,6 +70,36 @@ try {
             'message' => 'Un autre terrain avec ce nom existe déjà'
         ]);
         exit;
+    }
+    
+    // Traiter la nouvelle image
+    $imageName = $terrain['image'];
+    if (!empty($data['image']) && strpos($data['image'], 'data:image') === 0) {
+        // Supprimer l'ancienne image
+        if ($terrain['image']) {
+            $oldImagePath = __DIR__ . '/../../assets/images/terrains/' . $terrain['image'];
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+        }
+        
+        // Télécharger la nouvelle image
+        $imageName = processImageUpload($data['image'], $data['nom_te']);
+        
+        if (!$imageName) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur lors de l\'upload de l\'image'
+            ]);
+            exit;
+        }
+    } elseif ($data['image'] === '' && $terrain['image']) {
+        // Supprimer l'image si demandé
+        $oldImagePath = __DIR__ . '/../../assets/images/terrains/' . $terrain['image'];
+        if (file_exists($oldImagePath)) {
+            unlink($oldImagePath);
+        }
+        $imageName = null;
     }
     
     // Mise à jour du terrain
@@ -96,7 +125,7 @@ try {
         ':localisation' => $data['localisation'],
         ':disponibilite' => $data['disponibilite'],
         ':id_responsable' => !empty($data['id_responsable']) ? $data['id_responsable'] : null,
-        ':image' => !empty($data['image']) ? $data['image'] : null,
+        ':image' => $imageName,
         ':id' => $data['id_terrain']
     ]);
     
@@ -118,5 +147,42 @@ try {
         'success' => false,
         'message' => 'Erreur lors de la modification du terrain'
     ]);
+}
+
+/**
+ * Traiter et sauvegarder l'image Base64
+ */
+function processImageUpload($base64Image, $terrainName) {
+    $uploadDir = __DIR__ . '/../../assets/images/terrains/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+        $format = $matches[1];
+        $base64Data = substr($base64Image, strpos($base64Image, ',') + 1);
+        $imageData = base64_decode($base64Data);
+        
+        if ($imageData === false) {
+            return null;
+        }
+        
+        $fileName = sanitizeFileName($terrainName) . '_' . time() . '.' . $format;
+        $filePath = $uploadDir . $fileName;
+        
+        if (file_put_contents($filePath, $imageData)) {
+            return $fileName;
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Nettoyer le nom de fichier
+ */
+function sanitizeFileName($name) {
+    $name = preg_replace('/[^a-zA-Z0-9-_]/', '_', $name);
+    return substr($name, 0, 50);
 }
 ?>

@@ -162,8 +162,22 @@ $pageTitle = "Gestion des Terrains";
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Image (URL)</label>
-                    <input type="text" id="image" name="image" placeholder="nom_image.jpg" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Photo du terrain</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-emerald-500 transition-colors" id="dropZone">
+                        <input type="file" id="imageFile" name="imageFile" accept="image/*" class="hidden">
+                        <div id="uploadPreview">
+                            <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-sm text-gray-600">Cliquez pour importer une photo ou glissez-la ici</p>
+                            <p class="text-xs text-gray-500 mt-1">JPG, PNG (max 5MB)</p>
+                        </div>
+                        <div id="previewContainer" class="hidden mt-4">
+                            <img id="previewImage" src="" alt="Aperçu" class="max-w-xs mx-auto rounded-lg">
+                            <button type="button" onclick="clearImage()" class="mt-2 text-sm text-red-600 hover:text-red-700">
+                                <i class="fas fa-trash mr-1"></i>Supprimer l'image
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="image" name="image">
                 </div>
 
                 <div class="flex gap-3 pt-4 border-t">
@@ -203,6 +217,77 @@ $pageTitle = "Gestion des Terrains";
         // Variables globales
         let currentTerrainId = null;
         let deleteTerrainId = null;
+        const dropZone = document.getElementById('dropZone');
+        const imageFile = document.getElementById('imageFile');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const imageInput = document.getElementById('image');
+
+        // Clic sur la zone de dépôt
+        dropZone.addEventListener('click', () => imageFile.click());
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-emerald-500', 'bg-emerald-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-emerald-500', 'bg-emerald-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-emerald-500', 'bg-emerald-50');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // Changement de fichier
+        imageFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Traiter le fichier sélectionné
+        function handleFileSelect(file) {
+            // Validation du type
+            if (!file.type.startsWith('image/')) {
+                alert('Veuillez sélectionner une image valide');
+                return;
+            }
+
+            // Validation de la taille (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La taille de l\'image ne doit pas dépasser 5MB');
+                return;
+            }
+
+            // Lire le fichier
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                imageInput.value = base64;
+                previewImage.src = base64;
+                uploadPreview.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Effacer l'image
+        function clearImage() {
+            imageInput.value = '';
+            imageFile.value = '';
+            previewImage.src = '';
+            uploadPreview.classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+        }
 
         // Initialisation au chargement de la page
         document.addEventListener('DOMContentLoaded', function() {

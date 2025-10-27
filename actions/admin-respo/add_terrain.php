@@ -3,7 +3,6 @@ require_once '../../config/database.php';
 
 header('Content-Type: application/json');
 
-// Vérifier que c'est une requête POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
@@ -13,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Récupérer les données JSON
     $data = json_decode(file_get_contents('php://input'), true);
     
     // Validation des champs requis
@@ -49,6 +47,20 @@ try {
         exit;
     }
     
+    // Traiter l'image
+    $imageName = null;
+    if (!empty($data['image']) && strpos($data['image'], 'data:image') === 0) {
+        $imageName = processImageUpload($data['image'], $data['nom_te']);
+        
+        if (!$imageName) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur lors de l\'upload de l\'image'
+            ]);
+            exit;
+        }
+    }
+    
     // Insertion du terrain
     $sql = "INSERT INTO terrain (nom_te, categorie, type, taille, prix_heure, localisation, disponibilite, id_responsable, image) 
             VALUES (:nom_te, :categorie, :type, :taille, :prix_heure, :localisation, :disponibilite, :id_responsable, :image)";
@@ -63,7 +75,7 @@ try {
         ':localisation' => $data['localisation'],
         ':disponibilite' => $data['disponibilite'],
         ':id_responsable' => !empty($data['id_responsable']) ? $data['id_responsable'] : null,
-        ':image' => !empty($data['image']) ? $data['image'] : null
+        ':image' => $imageName
     ]);
     
     if ($result) {
@@ -85,5 +97,46 @@ try {
         'success' => false,
         'message' => 'Erreur lors de l\'ajout du terrain'
     ]);
+}
+
+/**
+ * Traiter et sauvegarder l'image Base64
+ */
+function processImageUpload($base64Image, $terrainName) {
+    // Créer le dossier s'il n'existe pas
+    $uploadDir = __DIR__ . '/../../assets/images/terrains/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // Extraire le format de l'image
+    if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+        $format = $matches[1];
+        $base64Data = substr($base64Image, strpos($base64Image, ',') + 1);
+        $imageData = base64_decode($base64Data);
+        
+        if ($imageData === false) {
+            return null;
+        }
+        
+        // Générer un nom de fichier unique
+        $fileName = sanitizeFileName($terrainName) . '_' . time() . '.' . $format;
+        $filePath = $uploadDir . $fileName;
+        
+        // Sauvegarder le fichier
+        if (file_put_contents($filePath, $imageData)) {
+            return $fileName;
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Nettoyer le nom de fichier
+ */
+function sanitizeFileName($name) {
+    $name = preg_replace('/[^a-zA-Z0-9-_]/', '_', $name);
+    return substr($name, 0, 50);
 }
 ?>
