@@ -1,3 +1,20 @@
+<?php
+require_once '../config/database.php';
+require_once 'check_auth.php';
+
+
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: ../auth/login.php');
+    exit;
+}
+
+// Vérifier le rôle (admin ou responsable uniquement)
+if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
+    header('Location: ../index.php');
+    exit;
+}
+?>  
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -10,53 +27,7 @@
 <body class="bg-slate-50">
   <div class="min-h-screen">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-white shadow-md fixed top-0 left-0 h-full z-30 transition-all duration-300">
-      <div class="p-4 flex flex-col h-full">
-        <a href="#" class="flex items-center gap-3 mb-8 px-2">
-          <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">TB</div>
-          <div>
-            <h1 class="font-bold text-lg text-slate-900">Terrain Book</h1>
-            <p class="text-slate-600 text-xs">Admin Global</p>
-          </div>
-        </a>
-        <nav class="space-y-1 flex-1">
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 text-indigo-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105">
-            <i class="fas fa-th-large w-5 text-center"></i>
-            <span>Dashboard</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-users w-5 text-center"></i>
-            <span>Utilisateurs</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-map-marked-alt w-5 text-center"></i>
-            <span>Terrains</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-calendar-check w-5 text-center"></i>
-            <span>Réservations</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-trophy w-5 text-center"></i>
-            <span>Tournois</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-file-invoice w-5 text-center"></i>
-            <span>Factures</span>
-          </a>
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 hover:translate-x-1 rounded-lg font-medium transition-all duration-200">
-            <i class="fas fa-envelope w-5 text-center"></i>
-            <span>Newsletter</span>
-          </a>
-        </nav>
-        <div class="mt-auto">
-          <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-100 rounded-lg font-medium transition-all duration-200 hover:translate-x-1">
-            <i class="fas fa-sign-out-alt w-5 text-center"></i>
-            <span>Déconnexion</span>
-          </a>
-        </div>
-      </div>
-    </aside>
+    <?php include '../includes/sidebar.php'; ?>
 
     <!-- Content wrapper -->
     <main id="content" class="pl-64 transition-all duration-300">
