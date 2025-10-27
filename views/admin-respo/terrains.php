@@ -1,6 +1,6 @@
 <?php
-require_once '../config/database.php';
-require_once 'check_auth.php';
+require_once '../../config/database.php';
+require_once '../../check_auth.php';
 
 $pageTitle = "Gestion des Terrains";
 ?>
@@ -18,7 +18,7 @@ $pageTitle = "Gestion des Terrains";
 
 <body class="bg-gray-50">
     <div class="flex">
-        <?php include '../includes/sidebar.php'; ?>
+        <?php include '../../includes/sidebar.php'; ?>
 
         <main class="flex-1 ml-64 p-8">
             <!-- Header -->
@@ -333,7 +333,7 @@ $pageTitle = "Gestion des Terrains";
             showLoader();
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../actions/admin-respo/get_terrains.php?search=${encodeURIComponent(search)}&categorie=${categorie}&disponibilite=${disponibilite}&responsable=${responsable}`, true);
+            xhr.open('GET', `../../actions/admin-respo/get_terrains.php?search=${encodeURIComponent(search)}&categorie=${categorie}&disponibilite=${disponibilite}&responsable=${responsable}`, true);
 
             xhr.onload = function() {
                 hideLoader();
@@ -381,7 +381,7 @@ $pageTitle = "Gestion des Terrains";
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
             <div class="relative h-48 bg-gradient-to-br from-emerald-400 to-teal-600">
                 ${terrain.image ? `
-                    <img src="../assets/images/terrains/${terrain.image}" alt="${terrain.nom_te}" class="w-full h-full object-cover">
+                    <img src="../../assets/images/terrains/${terrain.image}" alt="${terrain.nom_te}" class="w-full h-full object-cover">
                 ` : `
                     <div class="w-full h-full flex items-center justify-center">
                         <i class="fas fa-futbol text-white text-6xl opacity-50"></i>
@@ -442,7 +442,7 @@ $pageTitle = "Gestion des Terrains";
         // Charger les responsables
         function loadResponsables() {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '../actions/admin-respo/get_responsables.php', true);
+            xhr.open('GET', '../../actions/admin-respo/get_responsables.php', true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -489,7 +489,7 @@ $pageTitle = "Gestion des Terrains";
             currentTerrainId = id;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../actions/admin-respo/get_terrain.php?id=${id}`, true);
+            xhr.open('GET', `../../actions/admin-respo/get_terrain.php?id=${id}`, true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -536,7 +536,7 @@ $pageTitle = "Gestion des Terrains";
             const data = Object.fromEntries(formData);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', currentTerrainId ? '../actions/admin-respo/edit_terrain.php' : '../actions/admin-respo/add_terrain.php', true);
+            xhr.open('POST', currentTerrainId ? '../../actions/admin-respo/edit_terrain.php' : '../../actions/admin-respo/add_terrain.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {
@@ -588,7 +588,7 @@ $pageTitle = "Gestion des Terrains";
             if (!deleteTerrainId) return;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '../actions/admin-respo/delete_terrain.php', true);
+            xhr.open('POST', '../../actions/admin-respo/delete_terrain.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {

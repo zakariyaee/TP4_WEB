@@ -1,38 +1,32 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - TerrainBook</title>
+    <title>Inscription - TerrainBook</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
         * {
             font-family: 'Inter', sans-serif;
         }
-
         @keyframes slideDown {
             from {
                 transform: translateY(-100%);
                 opacity: 0;
             }
-
             to {
                 transform: translateY(0);
                 opacity: 1;
             }
         }
-
         .message-animate {
             animation: slideDown 0.3s ease-out;
         }
     </style>
 </head>
-
 <body class="bg-gradient-to-br from-green-300 via-white to-green-300/100 min-h-screen flex items-center justify-center p-4">
-
+    
     <!-- Message de succès/erreur en haut -->
     <div id="topMessage" class="fixed top-0 left-0 right-0 z-50 hidden">
         <div class="max-w-md mx-auto mt-4 px-4">
@@ -53,61 +47,86 @@
                 </div>
                 <span class="text-lg font-bold text-gray-900">TerrainBook</span>
             </div>
-
+            
             <h1 class="text-xl font-bold text-gray-900 mb-1">Bienvenue</h1>
             <p class="text-xs text-gray-600">Connectez-vous ou créez un compte pour continuer</p>
         </div>
 
         <!-- Tabs -->
         <div class="flex gap-1.5 mb-5 bg-gray-100 p-1 rounded-lg">
-            <button id="loginTab" class="flex-1 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-700 rounded-md shadow-sm">
+            <button id="loginTab" class="flex-1 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-md">
                 Connexion
             </button>
-            <button id="registerTab" class="flex-1 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-md">
+            <button id="registerTab" class="flex-1 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-700 rounded-md shadow-sm">
                 Inscription
             </button>
         </div>
 
-        <!-- Formulaire de connexion -->
-        <form id="loginForm">
+        <!-- Formulaire d'inscription -->
+        <form id="registerForm">
+            <div class="mb-3">
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nom</label>
+                <input 
+                    type="text" 
+                    id="registerNom"
+                    placeholder="Dupont"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-xs"
+                    required
+                >
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Prénom</label>
+                <input 
+                    type="text" 
+                    id="registerPrenom"
+                    placeholder="Jean"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-xs"
+                    required
+                >
+            </div>
+
             <div class="mb-3">
                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
-                <input
-                    type="email"
-                    id="loginEmail"
+                <input 
+                    type="email" 
+                    id="registerEmail"
                     placeholder="votre@email.com"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-xs"
-                    required>
+                    required
+                >
             </div>
 
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Mot de passe</label>
                 <div class="relative">
-                    <input
-                        type="password"
-                        id="loginPassword"
+                    <input 
+                        type="password" 
+                        id="registerPassword"
                         placeholder="••••••••"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-xs pr-9"
-                        required>
+                        required
+                    >
                     <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <button
+            <button 
                 type="submit"
-                class="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all text-sm mb-3">
-                Se connecter
+                class="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all text-sm mb-3"
+            >
+                Créer un compte
             </button>
 
             <div class="text-center">
-                <a href="../index.php" class="inline-flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-semibold group">
+                <a href="../../index.php" class="inline-flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-semibold group">
                     <svg class="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                     Retour à l'accueil
                 </a>
@@ -118,49 +137,55 @@
     <script>
         const loginTab = document.getElementById('loginTab');
         const registerTab = document.getElementById('registerTab');
-        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
         const topMessage = document.getElementById('topMessage');
         const messageContent = document.getElementById('messageContent');
         const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('loginPassword');
+        const passwordInput = document.getElementById('registerPassword');
 
         togglePassword.addEventListener('click', () => {
             const type = passwordInput.type === 'password' ? 'text' : 'password';
             passwordInput.type = type;
         });
 
-        registerTab.addEventListener('click', () => {
-            loginTab.classList.remove('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
-            loginTab.classList.add('text-gray-600', 'hover:text-gray-900');
-            registerTab.classList.remove('text-gray-600', 'hover:text-gray-900');
-            registerTab.classList.add('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
-
+        loginTab.addEventListener('click', () => {
+            registerTab.classList.remove('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
+            registerTab.classList.add('text-gray-600', 'hover:text-gray-900');
+            loginTab.classList.remove('text-gray-600', 'hover:text-gray-900');
+            loginTab.classList.add('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
+            
             setTimeout(() => {
-                window.location.href = 'register.php';
+                window.location.href = 'login.php';
             }, 200);
         });
 
-        loginForm.addEventListener('submit', async (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<svg class="animate-spin h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
             submitBtn.disabled = true;
+            
+            const nom = document.getElementById('registerNom').value.trim();
+            const prenom = document.getElementById('registerPrenom').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
 
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            if (password.length < 6) {
+                showTopMessage('Le mot de passe doit contenir au moins 6 caractères', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
 
             try {
-                const response = await fetch('../actions/auth/login.php', {
+                const response = await fetch('../../actions/auth/register.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        email,
-                        password
-                    })
+                    body: JSON.stringify({ nom, prenom, email, password })
                 });
 
                 const data = await response.json();
@@ -168,16 +193,16 @@
                 if (data.success) {
                     showTopMessage(data.message, 'success');
                     setTimeout(() => {
-                        // Rediriger selon le rôle de l'utilisateur
-                        window.location.href = data.redirect;
-                    }, 1500);
+                        window.location.href = 'login.php';
+                    }, 2000);
                 } else {
                     showTopMessage(data.message, 'error');
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                 }
             } catch (error) {
-                showTopMessage('Erreur de connexion. Veuillez réessayer.', 'error');
+                console.error('Erreur:', error);
+                showTopMessage('Erreur lors de l\'inscription. Veuillez réessayer.', 'error');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
@@ -204,18 +229,18 @@
                     </button>
                 </div>
             `;
-
+            
             messageContent.className = `rounded-lg shadow-lg p-4 message-animate ${
                 type === 'success' 
                     ? 'bg-green-50 text-green-800 border-l-4 border-green-500' 
                     : 'bg-red-50 text-red-800 border-l-4 border-red-500'
             }`;
-
+            
             topMessage.classList.remove('hidden');
 
             setTimeout(() => {
                 hideTopMessage();
-            }, 900);
+            }, 5000);
         }
 
         function hideTopMessage() {
@@ -223,5 +248,4 @@
         }
     </script>
 </body>
-
 </html>

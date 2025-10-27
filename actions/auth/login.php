@@ -62,10 +62,10 @@ try {
     $redirectUrl = '';
     switch ($user['role']) {
         case 'admin':
-            $redirectUrl = '../admin/dashboard.php';
+            $redirectUrl = '../admin-respo/dashboard.php';
             break;
         case 'responsable':
-            $redirectUrl = '../responsable/dashboard.php';
+            $redirectUrl = '../admin-respo/dashboard.php';
             break;
         case 'joueur':
             $redirectUrl = '../joueur/accueil.php';

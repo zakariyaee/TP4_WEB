@@ -1,6 +1,6 @@
 <?php
-require_once '../config/database.php';
-require_once 'check_auth.php';
+require_once '../../config/database.php';
+require_once '../../check_auth.php';
 
 
 // Vérifier si l'utilisateur est connecté
@@ -26,7 +26,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
 </head>
 <body class="bg-gray-50">
     <!-- Inclure la sidebar -->
-    <?php include '../includes/sidebar.php'; ?>
+    <?php include '../../includes/sidebar.php'; ?>
     
     <!-- Contenu principal avec marge à gauche pour la sidebar -->
     <main class="ml-64 p-8">
