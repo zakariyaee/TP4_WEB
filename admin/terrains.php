@@ -248,7 +248,7 @@ $pageTitle = "Gestion des Terrains";
             showLoader();
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../actions/admin/get_terrains.php?search=${encodeURIComponent(search)}&categorie=${categorie}&disponibilite=${disponibilite}&responsable=${responsable}`, true);
+            xhr.open('GET', `../actions/admin-respo/get_terrains.php?search=${encodeURIComponent(search)}&categorie=${categorie}&disponibilite=${disponibilite}&responsable=${responsable}`, true);
 
             xhr.onload = function() {
                 hideLoader();
@@ -357,7 +357,7 @@ $pageTitle = "Gestion des Terrains";
         // Charger les responsables
         function loadResponsables() {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '../actions/admin/get_responsables.php', true);
+            xhr.open('GET', '../actions/admin-respo/get_responsables.php', true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -404,7 +404,7 @@ $pageTitle = "Gestion des Terrains";
             currentTerrainId = id;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../actions/admin/get_terrain.php?id=${id}`, true);
+            xhr.open('GET', `../actions/admin-respo/get_terrain.php?id=${id}`, true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -451,7 +451,7 @@ $pageTitle = "Gestion des Terrains";
             const data = Object.fromEntries(formData);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', currentTerrainId ? '../actions/admin/edit_terrain.php' : '../actions/admin/add_terrain.php', true);
+            xhr.open('POST', currentTerrainId ? '../actions/admin-respo/edit_terrain.php' : '../actions/admin-respo/add_terrain.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {
@@ -503,7 +503,7 @@ $pageTitle = "Gestion des Terrains";
             if (!deleteTerrainId) return;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '../actions/admin/delete_terrain.php', true);
+            xhr.open('POST', '../actions/admin-respo/delete_terrain.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {
