@@ -40,7 +40,8 @@ try {
         $params[':responsable'] = $responsable;
     }
     
-    $sql .= " ORDER BY t.nom_te ASC";
+    // Trier par ID décroissant : les plus récents en premier
+    $sql .= " ORDER BY t.id_terrain DESC";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
