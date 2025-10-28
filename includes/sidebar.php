@@ -13,7 +13,7 @@ $userEmail = $_SESSION['user_email'] ?? '';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 ?>
 
-<aside class="w-64 bg-gradient-to-b from-slate-800 to-slate-900 text-white min-h-screen fixed left-0 top-0 shadow-2xl flex flex-col">
+<aside id="sidebar" class="w-64 bg-gradient-to-b from-slate-800 to-slate-900 text-white min-h-screen fixed left-0 top-0 shadow-2xl flex flex-col">
     <!-- Logo et Titre -->
     <div class="p-6 border-b border-slate-700">
         <div class="flex items-center gap-3">
