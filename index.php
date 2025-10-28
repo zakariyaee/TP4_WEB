@@ -50,8 +50,8 @@
                     <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors">Avantages</a>
 
                     <div class="h-4 w-px bg-gray-200"></div>
-                    <a href="auth/login.php" class="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors">Connexion</a>
-                    <a href="auth/register.php" class="bg-gradient-to-r from-emerald-600 to-green-700 text-white text-sm font-medium px-5 py-2 rounded-lg hover:shadow-md smooth-hover">
+                    <a href="views/auth/login.php" class="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors">Connexion</a>
+                    <a href="views/auth/register.php" class="bg-gradient-to-r from-emerald-600 to-green-700 text-white text-sm font-medium px-5 py-2 rounded-lg hover:shadow-md smooth-hover">
                         Inscription
                     </a>
                 </div>
@@ -371,7 +371,7 @@
                     <div class="flex flex-wrap justify-center md:justify-end gap-6">
                         <a href="#terrains" class="text-sm text-gray-600 hover:text-emerald-600 transition-colors font-medium">Terrains</a>
                         <a href="#features" class="text-sm text-gray-600 hover:text-emerald-600 transition-colors font-medium">Avantages</a>
-                        <a href="auth/login.php" class="text-sm text-gray-600 hover:text-emerald-600 transition-colors font-medium">Connexion</a>
+                        <a href="views/auth/login.php" class="text-sm text-gray-600 hover:text-emerald-600 transition-colors font-medium">Connexion</a>
                     </div>
 
                     <!-- Réseaux sociaux -->
