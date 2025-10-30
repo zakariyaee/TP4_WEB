@@ -15,7 +15,7 @@ Ce document établit la convention de codage standardisée pour le projet **Terr
 
 Cette convention s'applique à :
 - Code backend (PHP)
-- Code frontend (JavaScript, HTML, CSS)
+- Code frontend (JavaScript, HTML, CSS,Tailwind CSS)
 - Structure de la base de données
 - Organisation des fichiers et dossiers
 - Documentation et commentaires
