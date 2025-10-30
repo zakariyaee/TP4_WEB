@@ -36,7 +36,7 @@
         <div class="p-8">
           <!-- Header avec bouton toggle -->
           <div class="flex items-center gap-4 mb-8">
-            <button id="toggleSidebar" class="p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white shadow transition duration-300">
+            <button id="toggleSidebar" class="p-2 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow transition duration-300">
               <i class="fas fa-bars text-lg"></i>
             </button>
             <div>
