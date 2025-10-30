@@ -1,7 +1,6 @@
 <?php
-// actions/admin-respo/edit_terrain.php
-require_once '../../config/database.php';
-require_once '../../check_auth.php';
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 
 checkAdminOrRespo();
 
@@ -63,10 +62,13 @@ try {
     // Traiter la nouvelle image
     $imageName = $terrain['image'];
     if (!empty($data['image']) && strpos($data['image'], 'data:image') === 0) {
+        // Supprimer l'ancienne image
         if ($terrain['image']) {
-            $oldImagePath = __DIR__ . '/../../assets/images/terrains/' . $terrain['image'];
+            // CORRECTION: Ajout du / manquant
+            $oldImagePath = __DIR__ . '/../../../assets/images/terrains/' . $terrain['image'];
             if (file_exists($oldImagePath)) {
                 unlink($oldImagePath);
+                error_log("Ancienne image supprimée: " . $oldImagePath);
             }
         }
         
@@ -77,7 +79,8 @@ try {
             exit;
         }
     } elseif ($data['image'] === '' && $terrain['image']) {
-        $oldImagePath = __DIR__ . '/../../assets/images/terrains/' . $terrain['image'];
+        // Supprimer l'image si elle a été effacée
+        $oldImagePath = __DIR__ . '/../../../assets/images/terrains/' . $terrain['image'];
         if (file_exists($oldImagePath)) {
             unlink($oldImagePath);
         }
@@ -119,9 +122,14 @@ try {
 }
 
 function processImageUpload($base64Image, $terrainName) {
-    $uploadDir = __DIR__ . '/../../assets/images/terrains/';
+    // CORRECTION: Chemin absolu avec /
+    $uploadDir = __DIR__ . '/../../../assets/images/terrains/';
+    
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!mkdir($uploadDir, 0755, true)) {
+            error_log("Impossible de créer le répertoire: " . $uploadDir);
+            return null;
+        }
     }
     
     if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
@@ -130,6 +138,7 @@ function processImageUpload($base64Image, $terrainName) {
         $imageData = base64_decode($base64Data);
         
         if ($imageData === false) {
+            error_log("Échec du décodage base64");
             return null;
         }
         
@@ -137,7 +146,10 @@ function processImageUpload($base64Image, $terrainName) {
         $filePath = $uploadDir . $fileName;
         
         if (file_put_contents($filePath, $imageData)) {
+            error_log("Image sauvegardée: " . $filePath);
             return $fileName;
+        } else {
+            error_log("Échec de l'écriture du fichier: " . $filePath);
         }
     }
     

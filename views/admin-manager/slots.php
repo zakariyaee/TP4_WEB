@@ -432,7 +432,7 @@ $pageTitle = "Gestion des Créneaux";
         // Charger les terrains
         function loadTerrains() {
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '../../actions/admin-respo/get_terrains.php', true);
+            xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -471,7 +471,7 @@ $pageTitle = "Gestion des Créneaux";
             showLoader();
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../../actions/admin-respo/get_creneaux.php?terrain=${terrain}&jour=${encodeURIComponent(jour)}&disponibilite=${disponibilite}`, true);
+            xhr.open('GET', `../../actions/admin-manager/slot/get_slots.php?terrain=${terrain}&jour=${encodeURIComponent(jour)}&disponibilite=${disponibilite}`, true);
 
             xhr.onload = function() {
                 hideLoader();
@@ -718,7 +718,7 @@ function displayCreneaux(creneaux) {
             currentCreneauId = id;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../../actions/admin-respo/get_creneau.php?id=${id}`, true);
+            xhr.open('GET', `../../actions/admin-manager/slot/get_slot.php?id=${id}`, true);
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
@@ -757,7 +757,7 @@ function displayCreneaux(creneaux) {
             const data = Object.fromEntries(formData);
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', currentCreneauId ? '../../actions/admin-respo/edit_creneau.php' : '../../actions/admin-respo/add_creneau.php', true);
+            xhr.open('POST', currentCreneauId ? '../../actions/admin-manager/slot/edit_slot.php' : '../../actions/admin-manager/slot/add_slot.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {
@@ -808,7 +808,7 @@ function displayCreneaux(creneaux) {
             if (!deleteCreneauId) return;
 
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '../../actions/admin-respo/delete_creneau.php', true);
+            xhr.open('POST', '../../actions/admin-manager/slot/delete_slot.php', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
 
             xhr.onload = function() {

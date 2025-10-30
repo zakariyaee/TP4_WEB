@@ -1,7 +1,7 @@
 <?php
 // actions/admin-respo/get_creneau.php
-require_once '../../config/database.php';
-require_once '../../check_auth.php';
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 
 checkAdminOrRespo();
 

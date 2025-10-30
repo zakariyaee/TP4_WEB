@@ -62,13 +62,13 @@ try {
     $redirectUrl = '';
     switch ($user['role']) {
         case 'admin':
-            $redirectUrl = '../admin-respo/dashboard.php';
+            $redirectUrl = '../admin-manager/dashboard.php';
             break;
         case 'responsable':
-            $redirectUrl = '../admin-respo/dashboard.php';
+            $redirectUrl = '../admin-manager/dashboard.php';
             break;
         case 'joueur':
-            $redirectUrl = '../joueur/accueil.php';
+            $redirectUrl = '../player/accueil.php';
             break;
         default:
             $redirectUrl = '../index.php';

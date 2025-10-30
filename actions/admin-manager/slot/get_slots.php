@@ -1,6 +1,7 @@
 <?php
 // actions/admin-respo/get_creneaux.php
-require_once '../../config/database.php';
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 header('Content-Type: application/json');
 
 try {

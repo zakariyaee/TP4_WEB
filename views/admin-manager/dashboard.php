@@ -1,7 +1,7 @@
   <?php
   require_once '../../config/database.php';
   require_once '../../check_auth.php';
-  require_once '../../actions/admin-respo/dashbord_action.php';
+  require_once '../../actions/admin-manager/dashbord_action.php';
 
   // Vérifier si l'utilisateur est connecté
   if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {

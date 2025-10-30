@@ -1,8 +1,7 @@
 <?php
 // actions/admin-respo/delete_terrain.php
-require_once '../../config/database.php';
-require_once '../../check_auth.php';
-
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 checkAdminOrRespo();
 
 header('Content-Type: application/json');

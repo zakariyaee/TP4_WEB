@@ -45,10 +45,10 @@ function redirectToDashboard($role) {
     switch ($role) {
         case 'admin':
         case 'responsable':
-            header('Location: views/admin-respo/dashboard.php');
+            header('Location: views/admin-manager/dashboard.php');
             break;
         case 'joueur':
-            header('Location: views/joueur/accueil.php');
+            header('Location: views/player/accueil.php');
             break;
         default:
             header('Location: ../auth/login.php');

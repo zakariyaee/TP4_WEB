@@ -1,7 +1,6 @@
 <?php
-// actions/admin-respo/add_terrain.php
-require_once '../../config/database.php';
-require_once '../../check_auth.php';
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 
 checkAdminOrRespo();
 
@@ -83,9 +82,14 @@ try {
 }
 
 function processImageUpload($base64Image, $terrainName) {
-    $uploadDir = __DIR__ . '/../../assets/images/terrains/';
+    // CORRECTION: Ajout du / à la fin et chemin absolu
+    $uploadDir = __DIR__ . '/../../../assets/images/terrains/';
+    
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!mkdir($uploadDir, 0755, true)) {
+            error_log("Impossible de créer le répertoire: " . $uploadDir);
+            return null;
+        }
     }
     
     if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
@@ -94,6 +98,7 @@ function processImageUpload($base64Image, $terrainName) {
         $imageData = base64_decode($base64Data);
         
         if ($imageData === false) {
+            error_log("Échec du décodage base64");
             return null;
         }
         
@@ -101,7 +106,10 @@ function processImageUpload($base64Image, $terrainName) {
         $filePath = $uploadDir . $fileName;
         
         if (file_put_contents($filePath, $imageData)) {
+            error_log("Image sauvegardée: " . $filePath);
             return $fileName;
+        } else {
+            error_log("Échec de l'écriture du fichier: " . $filePath);
         }
     }
     

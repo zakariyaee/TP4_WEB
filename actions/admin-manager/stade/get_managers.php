@@ -1,7 +1,7 @@
 <?php
 // actions/admin-respo/get_responsables.php
-require_once '../../config/database.php';
-require_once '../../check_auth.php';
+require_once '../../../config/database.php';
+require_once '../../../check_auth.php';
 
 checkAdminOrRespo();
 
@@ -27,7 +27,7 @@ try {
     echo json_encode(['success' => true, 'responsables' => $responsables]);
     
 } catch (PDOException $e) {
-    error_log("Erreur get_responsables: " . $e->getMessage());
+    error_log("Erreur get_managers: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des responsables']);
 }
 ?>
