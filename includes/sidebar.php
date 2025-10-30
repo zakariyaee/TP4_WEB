@@ -46,14 +46,14 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </li>
 
-            <!-- Utilisateurs (Admin seulement) -->
+            <!-- Users (Admin only) -->
             <?php if ($userRole === 'admin'): ?>
                 <li>
-                    <a href="utilisateurs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'utilisateurs' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
+                    <a href="user.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'user' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span class="text-sm font-medium">Utilisateurs</span>
+                        <span class="text-sm font-medium">Users</span>
                     </a>
                 </li>
             <?php endif; ?>
@@ -90,13 +90,13 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </li>
 
-            <!-- Tournois -->
+            <!-- Tournaments -->
             <li>
-                <a href="tournois.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'tournois' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
+                <a href="tournament.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'tournament' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                     </svg>
-                    <span class="text-sm font-medium">Tournois</span>
+                    <span class="text-sm font-medium">Tournaments</span>
                 </a>
             </li>
 
