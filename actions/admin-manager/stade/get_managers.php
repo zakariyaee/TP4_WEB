@@ -14,7 +14,7 @@ try {
     
     if ($_SESSION['user_role'] === 'responsable') {
         // Un responsable ne peut voir que lui-même
-        $sql .= " WHERE email = :email";
+        $sql .= " AND email = :email";
         $params[':email'] = $_SESSION['user_email'];
     }
     

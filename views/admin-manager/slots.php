@@ -547,6 +547,12 @@ function displayCreneaux(creneaux) {
         const totalDisponibles = terrain.creneaux.filter(c => c.disponibilite).length;
         const totalReserves = terrain.creneaux.filter(c => !c.disponibilite).length;
 
+        // Vérifier s'il y a des créneaux de nuit pour ce terrain
+        const hasNuitCreneaux = terrain.creneaux.some(c => {
+            const heure = parseInt(c.heure_debut.split(':')[0]);
+            return heure >= 0 && heure < 6;
+        });
+
         return `
             <div class="terrain-card">
                 <!-- Header Terrain -->
@@ -579,7 +585,25 @@ function displayCreneaux(creneaux) {
                         </div>
                     `).join('')}
 
-                    <!-- Time slot: Matin -->
+                    ${hasNuitCreneaux ? `
+                        <!-- Time slot: Nuit (00:00 - 06:00) -->
+                        <div class="time-label">
+                            <div class="text-center">
+                                <i class="fas fa-star text-purple-400"></i>
+                                <div class="text-sm">NUIT</div>
+                                <div class="text-xs opacity-75">00:00 - 06:00</div>
+                            </div>
+                        </div>
+                        ${jours.map(jour => {
+                            const creneauxNuit = (jourGroups[jour] || []).filter(c => {
+                                const heure = parseInt(c.heure_debut.split(':')[0]);
+                                return heure >= 0 && heure < 6;
+                            });
+                            return renderCreneauxCell(creneauxNuit);
+                        }).join('')}
+                    ` : ''}
+
+                    <!-- Time slot: Matin (06:00 - 12:00) -->
                     <div class="time-label">
                         <div class="text-center">
                             <i class="fas fa-sun text-yellow-400"></i>
@@ -592,34 +616,10 @@ function displayCreneaux(creneaux) {
                             const heure = parseInt(c.heure_debut.split(':')[0]);
                             return heure >= 6 && heure < 12;
                         });
-                        return `
-                            <div class="planning-cell creneau-cell">
-                                ${creneauxMatin.length > 0 ? creneauxMatin.map(c => `
-                                    <div class="creneau-item ${c.disponibilite ? 'available' : 'reserved'}">
-                                        <div class="creneau-time">
-                                            <i class="fas fa-clock mr-1"></i>${c.heure_debut} - ${c.heure_fin}
-                                        </div>
-                                        ${!c.disponibilite && c.reservation_info ? `
-                                            <div class="reservation-info">
-                                                <div><i class="fas fa-users mr-1"></i>${c.reservation_info.equipe_nom}</div>
-                                                ${c.reservation_info.equipe_adverse ? `<div><i class="fas fa-shield-alt mr-1"></i>vs ${c.reservation_info.equipe_adverse}</div>` : ''}
-                                            </div>
-                                        ` : ''}
-                                        <div class="flex gap-1 mt-2">
-                                            <button onclick="editCreneau(${c.id_creneaux})" class="action-btn bg-green-800 text-white hover:bg-green-900">
-                                                <i class="fas fa-pen"></i>
-                                            </button>
-                                            <button onclick="openDeleteModal(${c.id_creneaux})" class="action-btn bg-red-600 text-white hover:bg-red-700">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('') : '<div class="empty-state"><i class="fas fa-moon"></i><br>Aucun</div>'}
-                            </div>
-                        `;
+                        return renderCreneauxCell(creneauxMatin);
                     }).join('')}
 
-                    <!-- Time slot: Après-midi -->
+                    <!-- Time slot: Après-midi (12:00 - 18:00) -->
                     <div class="time-label">
                         <div class="text-center">
                             <i class="fas fa-cloud-sun text-orange-400"></i>
@@ -632,76 +632,67 @@ function displayCreneaux(creneaux) {
                             const heure = parseInt(c.heure_debut.split(':')[0]);
                             return heure >= 12 && heure < 18;
                         });
-                        return `
-                            <div class="planning-cell creneau-cell">
-                                ${creneauxApresMidi.length > 0 ? creneauxApresMidi.map(c => `
-                                    <div class="creneau-item ${c.disponibilite ? 'available' : 'reserved'}">
-                                        <div class="creneau-time">
-                                            <i class="fas fa-clock mr-1"></i>${c.heure_debut} - ${c.heure_fin}
-                                        </div>
-                                        ${!c.disponibilite && c.reservation_info ? `
-                                            <div class="reservation-info">
-                                                <div><i class="fas fa-users mr-1"></i>${c.reservation_info.equipe_nom}</div>
-                                                ${c.reservation_info.equipe_adverse ? `<div><i class="fas fa-shield-alt mr-1"></i>vs ${c.reservation_info.equipe_adverse}</div>` : ''}
-                                            </div>
-                                        ` : ''}
-                                        <div class="flex gap-1 mt-2">
-                                            <button onclick="editCreneau(${c.id_creneaux})" class="action-btn bg-green-800 text-white hover:bg-green-900">
-                                                <i class="fas fa-pen"></i>
-                                            </button>
-                                            <button onclick="openDeleteModal(${c.id_creneaux})" class="action-btn bg-red-600 text-white hover:bg-red-700">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('') : '<div class="empty-state"><i class="fas fa-moon"></i><br>Aucun</div>'}
-                            </div>
-                        `;
+                        return renderCreneauxCell(creneauxApresMidi);
                     }).join('')}
 
-                    <!-- Time slot: Soir -->
+                    <!-- Time slot: Soir (18:00 - 00:00) -->
                     <div class="time-label">
                         <div class="text-center">
                             <i class="fas fa-moon text-indigo-400"></i>
                             <div class="text-sm">SOIR</div>
-                            <div class="text-xs opacity-75">18:00 - 23:00</div>
+                            <div class="text-xs opacity-75">18:00 - 00:00</div>
                         </div>
                     </div>
                     ${jours.map(jour => {
                         const creneauxSoir = (jourGroups[jour] || []).filter(c => {
                             const heure = parseInt(c.heure_debut.split(':')[0]);
-                            return heure >= 18;
+                            return heure >= 18 || heure === 0; // Inclut minuit (00:00)
                         });
-                        return `
-                            <div class="planning-cell creneau-cell">
-                                ${creneauxSoir.length > 0 ? creneauxSoir.map(c => `
-                                    <div class="creneau-item ${c.disponibilite ? 'available' : 'reserved'}">
-                                        <div class="creneau-time">
-                                            <i class="fas fa-clock mr-1"></i>${c.heure_debut} - ${c.heure_fin}
-                                        </div>
-                                        ${!c.disponibilite && c.reservation_info ? `
-                                            <div class="reservation-info">
-                                                <div><i class="fas fa-users mr-1"></i>${c.reservation_info.equipe_nom}</div>
-                                                ${c.reservation_info.equipe_adverse ? `<div><i class="fas fa-shield-alt mr-1"></i>vs ${c.reservation_info.equipe_adverse}</div>` : ''}
-                                            </div>
-                                        ` : ''}
-                                        <div class="flex gap-1 mt-2">
-                                            <button onclick="editCreneau(${c.id_creneaux})" class="action-btn bg-green-800 text-white hover:bg-green-900">
-                                                <i class="fas fa-pen"></i>
-                                            </button>
-                                            <button onclick="openDeleteModal(${c.id_creneaux})" class="action-btn bg-red-600 text-white hover:bg-red-700">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('') : '<div class="empty-state"><i class="fas fa-moon"></i><br>Aucun</div>'}
-                            </div>
-                        `;
+                        return renderCreneauxCell(creneauxSoir);
                     }).join('')}
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Fonction helper pour rendre une cellule de créneaux
+function renderCreneauxCell(creneaux) {
+    if (creneaux.length === 0) {
+        return `
+            <div class="planning-cell creneau-cell">
+                <div class="empty-state">
+                    <i class="fas fa-moon"></i><br>Aucun
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="planning-cell creneau-cell">
+            ${creneaux.map(c => `
+                <div class="creneau-item ${c.disponibilite ? 'available' : 'reserved'}">
+                    <div class="creneau-time">
+                        <i class="fas fa-clock mr-1"></i>${c.heure_debut} - ${c.heure_fin}
+                    </div>
+                    ${!c.disponibilite && c.reservation_info ? `
+                        <div class="reservation-info">
+                            <div><i class="fas fa-users mr-1"></i>${c.reservation_info.equipe_nom}</div>
+                            ${c.reservation_info.equipe_adverse ? `<div><i class="fas fa-shield-alt mr-1"></i>vs ${c.reservation_info.equipe_adverse}</div>` : ''}
+                        </div>
+                    ` : ''}
+                    <div class="flex gap-1 mt-2">
+                        <button onclick="editCreneau(${c.id_creneaux})" class="action-btn bg-green-800 text-white hover:bg-green-900">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button onclick="openDeleteModal(${c.id_creneaux})" class="action-btn bg-red-600 text-white hover:bg-red-700">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
         // Ouvrir le modal d'ajout
