@@ -1,5 +1,14 @@
 <?php
-// actions/admin-respo/get_terrains.php
+/**
+ * Get terrains list with filters
+ * 
+ * Retrieves terrains from database with optional search, category, availability and manager filters.
+ * Admin and Responsable access (responsable can only see their own terrains).
+ *
+ * @return void
+ * @throws PDOException Database connection or query errors
+ */
+
 require_once '../../config/database.php';
 require_once '../../check_auth.php';
 
@@ -20,7 +29,7 @@ try {
     
     $params = [];
     
-    // Si c'est un responsable, ne montrer que ses terrains
+    // If responsable, show only their terrains
     if ($_SESSION['user_role'] === 'responsable') {
         $sql .= " AND t.id_responsable = :user_email";
         $params[':user_email'] = $_SESSION['user_email'];
@@ -41,7 +50,7 @@ try {
         $params[':disponibilite'] = $disponibilite;
     }
     
-    // Les responsables ne peuvent pas filtrer par un autre responsable
+    // Responsables cannot filter by another responsable
     if (!empty($responsable) && $_SESSION['user_role'] === 'admin') {
         $sql .= " AND t.id_responsable = :responsable";
         $params[':responsable'] = $responsable;
@@ -56,7 +65,7 @@ try {
     echo json_encode(['success' => true, 'terrains' => $terrains, 'count' => count($terrains)]);
     
 } catch (PDOException $e) {
-    error_log("Erreur get_terrains: " . $e->getMessage());
+    error_log("Error get_terrains: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des terrains']);
 }
 ?>

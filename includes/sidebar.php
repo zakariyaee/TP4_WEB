@@ -46,7 +46,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </li>
 
-            <!-- Utilisateurs (Admin seulement) -->
+            <!-- Utilisateurs (Admin uniquement) -->
             <?php if ($userRole === 'admin'): ?>
                 <li>
                     <a href="utilisateurs.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'utilisateurs' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
