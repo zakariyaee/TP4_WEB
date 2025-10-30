@@ -55,7 +55,7 @@
                 Invitations
                 <span class="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold ml-2">3</span>
             </a>
-            <a href="tournois.php" class="flex items-center gap-2 text-gray-800 font-medium hover:text-terrain-green transition-colors">
+            <a href="tournaments.php" class="flex items-center gap-2 text-gray-800 font-medium hover:text-terrain-green transition-colors">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
