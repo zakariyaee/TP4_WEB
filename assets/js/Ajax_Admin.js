@@ -9,7 +9,7 @@ const StatEls = {
 
 function Ajax_Dashbord_Statistique() {
   const xhr = new XMLHttpRequest();
-  const url = '../../actions/admin-respo/dashbord_statistique.php';
+  const url = '/actions/admin-manager/dashbord_statistique.php';
   xhr.open('GET', url, true);
   xhr.withCredentials = true; // Important pour envoyer les cookies de session
   xhr.onreadystatechange = function() {
@@ -39,7 +39,7 @@ function Ajax_Dashbord_Statistique() {
             if (typeof data.total_moyenne !== 'undefined' &&
               typeof data.total_minifoot !== 'undefined' &&
               typeof data.total_Grand !== 'undefined') {
-            initChartTypeTerrain(data);
+             initChartTypeTerrain(data);
 }
             
             console.log('✅ Statistiques mises à jour avec succès');
@@ -68,64 +68,64 @@ function Ajax_Dashbord_Statistique() {
 // === Graphique Doughnut des types de terrains ===
 let chartTypeTerrain = null;
 
-  function initChartTypeTerrain(data) {
-    const ctxPie = document.getElementById('chartTypeTerrain').getContext('2d');
-    $total=data.total_moyenne + data.total_minifoot + data.total_Grand;
-    // Données à afficher
-    const labels = [
-      `Terrain Moyen ${(data.total_moyenne/$total)*100 || 0}%`,
-      `Mini Foot ${(data.total_minifoot/$total)*100 || 0}%`,
-      `Grand Terrain ${(data.total_Grand/$total)*100 || 0}%`
-    ];
+function initChartTypeTerrain(data) {
+  const ctxPie = document.getElementById('chartTypeTerrain').getContext('2d');
+  $total=data.total_moyenne + data.total_minifoot + data.total_Grand;
+  // Données à afficher
+  const labels = [
+    `Terrain Moyen ${(data.total_moyenne/$total)*100 || 0}%`,
+    `Mini Foot ${(data.total_minifoot/$total)*100 || 0}%`,
+    `Grand Terrain ${(data.total_Grand/$total)*100 || 0}%`
+  ];
 
-    const values = [
-      data.total_moyenne || 0,
-      data.total_minifoot || 0,
-      data.total_Grand || 0
-    ];
+  const values = [
+    data.total_moyenne || 0,
+    data.total_minifoot || 0,
+    data.total_Grand || 0
+  ];
 
-    // Si le graphique existe déjà → on le met à jour
-    if (chartTypeTerrain) {
-      chartTypeTerrain.data.labels = labels;
-      chartTypeTerrain.data.datasets[0].data = values;
-      chartTypeTerrain.update();
-      return;
-    }
+  // Si le graphique existe déjà → on le met à jour
+  if (chartTypeTerrain) {
+    chartTypeTerrain.data.labels = labels;
+    chartTypeTerrain.data.datasets[0].data = values;
+    chartTypeTerrain.update();
+    return;
+  }
 
-    // Sinon, on crée le graphique pour la première fois
-    chartTypeTerrain = new Chart(ctxPie, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
-          hoverOffset: 15,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        responsive: true,
-        animation: { duration: 900, easing: 'easeOutQuart' },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#475569',
-              font: { size: 12 },
-              padding: 15
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw}%`
-            }
+  // Sinon, on crée le graphique pour la première fois
+  chartTypeTerrain = new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+        hoverOffset: 15,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#475569',
+            font: { size: 12 },
+            padding: 15
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.raw}%`
           }
         }
       }
-    });
-  }
+    }
+  });
+}
 
 
 window.addEventListener('storage', function(event) {
