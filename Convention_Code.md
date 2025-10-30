@@ -85,7 +85,7 @@ TP4_WEB/
 #### Dossiers (lowercase-hyphen)
 Format : lowercase avec tirets
 
-✅ **Correct :**
+
 ```
 admin-respo/
 user-management/
@@ -96,7 +96,7 @@ payment-processing/
 
 **Actions CRUD :** `action_entity.php`
 
-✅ **Correct :**
+
 ```
 add_terrain.php
 edit_user.php
@@ -106,7 +106,7 @@ get_terrains.php
 
 **Vues :** `entity-description.php` (pluriel pour listes)
 
-✅ **Correct :**
+
 ```
 terrains.php
 dashboard.php
@@ -115,7 +115,7 @@ user-profile.php
 
 **Actions Métier :** `verb_object.php`
 
-✅ **Correct :**
+
 ```
 create_reservation.php
 send_invitation.php
@@ -126,7 +126,7 @@ process_upload.php
 ### Variables
 
 #### PHP (camelCase)
-✅ **Correct :**
+
 ```php
 $currentTerrainId
 $userEmail
@@ -136,7 +136,7 @@ $totalPrice
 ```
 
 #### JavaScript (camelCase)
-✅ **Correct :**
+
 ```js
 let currentTerrainId
 const uploadPreview
@@ -144,7 +144,7 @@ let isFormValid
 ```
 
 #### Constantes (SCREAMING_SNAKE_CASE)
-✅ **Correct :**
+
 ```php
 MAX_FILE_SIZE
 UPLOAD_DIR
@@ -155,7 +155,7 @@ SESSION_TIMEOUT
 
 **Nommage :** camelCase + verbe d'action
 
-✅ **Correct :**
+
 ```php
 function processImageUpload()
 function validateUserInput()
@@ -217,7 +217,7 @@ Ordre recommandé :
 
 **Variables et Fonctions :** camelCase en anglais
 
-✅ **Correct :**
+
 ```js
 let currentTerrainId
 function loadTerrains()
@@ -227,7 +227,7 @@ function showNotification()
 
 **Constantes :** SCREAMING_SNAKE_CASE
 
-✅ **Correct :**
+
 ```js
 const MAX_FILE_SIZE = 5242880
 const API_ENDPOINT = '/api/'
@@ -254,7 +254,7 @@ Commentaires en anglais pour :
 
 ### Tables (Français - snake_case - singulier)
 
-✅ **Correct :**
+
 ```
 terrain
 utilisateur
@@ -457,7 +457,7 @@ docs: update API documentation
 
 **Format :** `type/description-with-hyphens`
 
-✅ **Correct :**
+
 ```
 feature/terrain-management
 fix/reservation-validation
