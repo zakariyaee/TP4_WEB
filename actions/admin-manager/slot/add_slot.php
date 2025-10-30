@@ -1,5 +1,5 @@
 <?php
-// actions/admin-respo/add_creneau.php
+// actions/admin-manager/slot/add_slot.php
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
 
@@ -40,9 +40,13 @@ try {
         exit;
     }
     
-    // Vérifier les chevauchements de créneaux
+    // Vérifier les chevauchements de créneaux (CORRIGÉ)
+    // Un créneau chevauche un autre SI ET SEULEMENT SI :
+    // - Il commence AVANT la fin de l'autre ET
+    // - Il finit APRÈS le début de l'autre
+    // Les créneaux consécutifs (ex: 11:00-12:00 et 12:00-13:00) ne chevauchent PAS
     $checkStmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
+        SELECT id_creneaux, heure_debut, heure_fin
         FROM creneau 
         WHERE id_terrain = :id_terrain 
         AND jour_semaine = :jour_semaine
@@ -58,11 +62,24 @@ try {
         ':heure_fin' => $data['heure_fin']
     ]);
     
-    $overlap = $checkStmt->fetch();
+    $overlaps = $checkStmt->fetchAll();
     
-    if ($overlap['count'] > 0) {
-        echo json_encode(['success' => false, 'message' => 'Ce créneau chevauche un créneau existant']);
-        exit;
+    // Vérifier s'il y a un vrai chevauchement (pas juste consécutif)
+    foreach ($overlaps as $existing) {
+        // Vérifier si c'est un vrai chevauchement et pas juste consécutif
+        // Consécutif : nouveau.debut == existing.fin OU nouveau.fin == existing.debut
+        $isConsecutive = ($data['heure_debut'] == $existing['heure_fin']) || 
+                        ($data['heure_fin'] == $existing['heure_debut']);
+        
+        if (!$isConsecutive) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Ce créneau chevauche un créneau existant (' . 
+                            substr($existing['heure_debut'], 0, 5) . ' - ' . 
+                            substr($existing['heure_fin'], 0, 5) . ')'
+            ]);
+            exit;
+        }
     }
     
     // Insertion du créneau
@@ -81,10 +98,14 @@ try {
         ':disponibilite' => $disponibilite
     ]);
     
-    echo json_encode(['success' => true, 'message' => 'Créneau ajouté avec succès']);
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Créneau ajouté avec succès',
+        'id_creneaux' => $pdo->lastInsertId()
+    ]);
     
 } catch (PDOException $e) {
     error_log("Erreur add_creneau: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'ajout du créneau']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'ajout du créneau: ' . $e->getMessage()]);
 }
 ?>
