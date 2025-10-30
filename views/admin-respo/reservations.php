@@ -162,227 +162,261 @@ if (session_status() === PHP_SESSION_NONE) {
     <div id="notification" class="hidden fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50"></div>
 
     <script>
-        // Données de démonstration
-        const reservationsData = [
-            {
-                id: 1,
-                joueur: 'Mohamed Ali',
-                terrain: 'Terrain A - Centre',
-                date: '25/10/2025',
-                heure: '16:00',
-                duree: '2h',
-                prix: '300 €',
-                extras: ['Ballon', 'Arbitre'],
-                statut: 'confirmee'
-            },
-            {
-                id: 2,
-                joueur: 'Fatima Zahra',
-                terrain: 'Terrain B - Nord',
-                date: '26/10/2025',
-                heure: '18:00',
-                duree: '1h',
-                prix: '250 €',
-                extras: [],
-                statut: 'payee'
-            },
-            {
-                id: 3,
-                joueur: 'Youssef Ben',
-                terrain: 'Terrain A - Centre',
-                date: '27/10/2025',
-                heure: '20:00',
-                duree: '1.5h',
-                prix: '225 €',
-                extras: ['Ballon'],
-                statut: 'en_attente'
-            },
-            {
-                id: 4,
-                joueur: 'Sarah Mansouri',
-                terrain: 'Terrain D - Est',
-                date: '28/10/2025',
-                heure: '14:00',
-                duree: '2h',
-                prix: '360 €',
-                extras: ['Arbitre', 'Maillots'],
-                statut: 'confirmee'
-            },
-            {
-                id: 5,
-                joueur: 'Ahmed Tazi',
-                terrain: 'Terrain C - Sud',
-                date: '29/10/2025',
-                heure: '19:00',
-                duree: '1h',
-                prix: '350 €',
-                extras: [],
-                statut: 'annulee'
-            }
-        ];
+       // ============================================================
+// SCRIPT MINIMAL POUR GESTION DYNAMIQUE DES RÉSERVATIONS
+// ============================================================
 
-        let currentReservations = [...reservationsData];
+// Variables globales
+let currentReservations = [];
+let allReservations = [];
 
-        // Fonction pour obtenir la classe de badge de statut
-        function getStatusBadge(statut) {
-            const badges = {
-                'confirmee': '<span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Confirmée</span>',
-                'en_attente': '<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>',
-                'payee': '<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Payée</span>',
-                'annulee': '<span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Annulée</span>'
-            };
-            return badges[statut] || statut;
-        }
+// ============================================================
+// 1. CHARGEMENT DES DONNÉES VIA AJAX
+// ============================================================
+function loadReservations() {
+    const searchQuery = document.getElementById('searchInput').value;
+    const filterDate = document.getElementById('filterDate').value;
+    const filterStatus = document.getElementById('filterStatus').value;
 
-        // Fonction pour afficher les extras
-        function displayExtras(extras) {
-            if (extras.length === 0) return '-';
-            return extras.map(extra => 
-                `<span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1">${extra}</span>`
-            ).join('');
-        }
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `../../actions/admin-respo/get_reservations.php?search=${encodeURIComponent(searchQuery)}&date=${filterDate}&status=${filterStatus}`, true);
 
-        // Fonction pour charger les réservations
-        function loadReservations() {
-            const tbody = document.getElementById('reservationsTableBody');
-            
-            if (currentReservations.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="px-6 py-12 text-center text-gray-500">
-                            <i class="fas fa-inbox text-4xl mb-3"></i>
-                            <p>Aucune réservation trouvée</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = currentReservations.map(reservation => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-medium text-gray-900">#${reservation.id}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${reservation.joueur}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-600">${reservation.terrain}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${reservation.date}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${reservation.heure}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${reservation.duree}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-medium text-gray-900">${reservation.prix}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        ${displayExtras(reservation.extras)}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        ${getStatusBadge(reservation.statut)}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div class="flex gap-2">
-                            ${reservation.statut === 'en_attente' ? 
-                                '<button onclick="validateReservation(' + reservation.id + ')" class="text-green-600 hover:text-green-700" title="Valider"><i class="fas fa-check"></i></button>' : ''}
-                            <button onclick="cancelReservation(' + reservation.id + ')" class="text-red-600 hover:text-red-700" title="Annuler"><i class="fas fa-times"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            updateStats();
-        }
-
-        
-
-        // Fonction de recherche
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const search = e.target.value.toLowerCase();
-            currentReservations = reservationsData.filter(r => 
-                r.joueur.toLowerCase().includes(search) ||
-                r.terrain.toLowerCase().includes(search)
-            );
-            loadReservations();
-        });
-
-        // Fonction de filtrage par statut
-        document.getElementById('filterStatus').addEventListener('change', function(e) {
-            const status = e.target.value;
-            if (status === '') {
-                currentReservations = [...reservationsData];
-            } else {
-                currentReservations = reservationsData.filter(r => r.statut === status);
-            }
-            loadReservations();
-        });
-
-        // Réinitialiser les filtres
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('filterDate').value = '';
-            document.getElementById('filterStatus').value = '';
-            currentReservations = [...reservationsData];
-            loadReservations();
-        }
-
-        
-
-        // Annuler une réservation
-        function cancelReservation(id) {
-            showModal('Voulez-vous annuler cette réservation ?', () => {
-                const index = currentReservations.findIndex(r => r.id === id);
-                if (index !== -1) {
-                    currentReservations[index].statut = 'annulee';
-                    loadReservations();
-                    showNotification('Réservation annulée', 'error');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    allReservations = response.reservations;
+                    currentReservations = response.reservations;
+                    displayReservations();
+                    updateStats(response.stats);
                 }
-            });
+            } catch (e) {
+                console.error('Erreur parsing JSON:', e);
+            }
         }
+    };
 
-        // Afficher le modal
-        function showModal(message, onConfirm) {
-            document.getElementById('modalMessage').textContent = message;
-            document.getElementById('confirmModal').classList.remove('hidden');
-            document.getElementById('confirmButton').onclick = () => {
-                onConfirm();
-                closeModal();
-            };
-        }
+    xhr.send();
+}
 
-        // Fermer le modal
-        function closeModal() {
-            document.getElementById('confirmModal').classList.add('hidden');
-        }
+// ============================================================
+// 2. AFFICHAGE DES RÉSERVATIONS DANS LE TABLEAU
+// ============================================================
+function displayReservations() {
+    const tbody = document.getElementById('reservationsTableBody');
+    
+    if (currentReservations.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-3"></i>
+                    <p>Aucune réservation trouvée</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-        // Afficher une notification
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
-            const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-blue-500'
-            };
-            
-            notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 text-white ${colors[type]}`;
-            notification.textContent = message;
-            notification.classList.remove('hidden');
-            
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 3000);
-        }
+    tbody.innerHTML = currentReservations.map(r => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900">#${r.id_reservation}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm text-gray-900">${r.joueur_nom}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm text-gray-600">${r.terrain_nom}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm text-gray-900">${r.date_reservation}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm text-gray-900">${r.heure_debut}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm text-gray-900">${r.duree}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900">${r.prix} DH</span>
+            </td>
+            <td class="px-6 py-4">
+                ${displayExtras(r.extras)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                ${getStatusBadge(r.statut)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <div class="flex gap-2">
+                    ${r.statut === 'en_attente' ? 
+                        `<button onclick="validateReservation(${r.id_reservation})" class="text-green-600 hover:text-green-700" title="Valider">
+                            <i class="fas fa-check"></i>
+                        </button>` : ''}
+                    ${r.statut !== 'annulee' ? 
+                        `<button onclick="cancelReservation(${r.id_reservation})" class="text-red-600 hover:text-red-700" title="Annuler">
+                            <i class="fas fa-times"></i>
+                        </button>` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            loadReservations();
-        });
+// ============================================================
+// 3. FONCTIONS UTILITAIRES POUR AFFICHAGE
+// ============================================================
+function getStatusBadge(statut) {
+    const badges = {
+        'confirmee': '<span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Confirmée</span>',
+        'en_attente': '<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>',
+        'terminee': '<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Terminée</span>',
+        'annulee': '<span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Annulée</span>'
+    };
+    return badges[statut] || statut;
+}
+
+function displayExtras(extras) {
+    if (!extras || extras.length === 0) return '-';
+    return extras.map(extra => 
+        `<span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1">${extra}</span>`
+    ).join('');
+}
+
+// ============================================================
+// 4. MISE À JOUR DES STATISTIQUES
+// ============================================================
+function updateStats(stats) {
+    if (stats) {
+        document.getElementById('total-reservations').textContent = stats.total || 0;
+        document.getElementById('confirmed-reservations').textContent = stats.confirmees || 0;
+        document.getElementById('pending-reservations').textContent = stats.en_attente || 0;
+        document.getElementById('revenue-total').textContent = (stats.revenue || 0) + ' DH';
+    }
+}
+
+// ============================================================
+// 5. ACTIONS SUR LES RÉSERVATIONS
+// ============================================================
+function validateReservation(id) {
+    showModal('Voulez-vous confirmer cette réservation ?', () => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '../../actions/admin-respo/validate_reservation.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showNotification('Réservation confirmée avec succès', 'success');
+                        loadReservations(); // Recharger les données
+                    } else {
+                        showNotification(response.message || 'Erreur lors de la validation', 'error');
+                    }
+                } catch (e) {
+                    showNotification('Erreur lors de la validation', 'error');
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({ id_reservation: id }));
+    });
+}
+
+function cancelReservation(id) {
+    showModal('Voulez-vous annuler cette réservation ?', () => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '../../actions/admin-respo/cancel_reservation.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showNotification('Réservation annulée', 'error');
+                        loadReservations(); // Recharger les données
+                    } else {
+                        showNotification(response.message || 'Erreur lors de l\'annulation', 'error');
+                    }
+                } catch (e) {
+                    showNotification('Erreur lors de l\'annulation', 'error');
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({ id_reservation: id }));
+    });
+}
+
+// ============================================================
+// 6. FILTRES ET RECHERCHE
+// ============================================================
+function setupFilters() {
+    // Recherche avec debounce
+    let searchTimeout;
+    document.getElementById('searchInput').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadReservations(), 500);
+    });
+
+    // Filtrage par date
+    document.getElementById('filterDate').addEventListener('change', loadReservations);
+
+    // Filtrage par statut
+    document.getElementById('filterStatus').addEventListener('change', loadReservations);
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterDate').value = '';
+    document.getElementById('filterStatus').value = '';
+    loadReservations();
+}
+
+// ============================================================
+// 7. MODAL DE CONFIRMATION
+// ============================================================
+function showModal(message, onConfirm) {
+    document.getElementById('modalMessage').textContent = message;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    document.getElementById('confirmButton').onclick = () => {
+        onConfirm();
+        closeModal();
+    };
+}
+
+function closeModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+// ============================================================
+// 8. NOTIFICATIONS
+// ============================================================
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+    };
+    
+    notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 text-white ${colors[type]}`;
+    notification.textContent = message;
+    notification.classList.remove('hidden');
+    
+    setTimeout(() => notification.classList.add('hidden'), 3000);
+}
+
+// ============================================================
+// 9. INITIALISATION
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadReservations(); // Charger les données initiales
+    setupFilters(); // Configurer les filtres
+    setInterval(loadReservations, 30000); // Rafraîchir toutes les 30 secondes
+});
     </script>
 </body>
 </html>
