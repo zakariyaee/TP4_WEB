@@ -38,7 +38,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         <ul class="space-y-1">
             <!-- Tableau de bord -->
             <li>
-                <a href="dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'index' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
+                <a href="dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'dashboard' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
@@ -53,14 +53,14 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
-                        <span class="text-sm font-medium">Users</span>
+                        <span class="text-sm font-medium">Utilisateurs</span>
                     </a>
                 </li>
             <?php endif; ?>
 
             <!-- Terrains -->
             <li>
-                <a href="stades.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'terrains' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
+                <a href="stades.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'stades' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M3 7v1a3 3 0 003 3h12a3 3 0 003-3V7m-18 0l2-4h14l2 4M3 7h18" />
                     </svg>
@@ -69,7 +69,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             </li>
             <!-- Crenaux -->
             <li>
-                <a href="slots.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'creneaux' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
+                <a href="slots.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all <?php echo $currentPage === 'slots' ? 'bg-emerald-600 shadow-lg shadow-emerald-600/50' : 'hover:bg-slate-700/50'; ?>">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 2m6-2A9 9 0 1112 3a9 9 0 019 9z" />
