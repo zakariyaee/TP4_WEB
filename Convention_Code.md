@@ -1,6 +1,6 @@
-# 🧩 Convention de Codage – TerrainBook
+#  Convention de Codage – TerrainBook
 
-## 🎯 Introduction
+## Introduction
 
 ### Objectif du Document
 
@@ -22,7 +22,7 @@ Cette convention s'applique à :
 
 ---
 
-## 🌍 Règles de Langue
+##  Règles de Langue
 
 ### Règle Fondamentale
 
@@ -37,7 +37,7 @@ Cette convention s'applique à :
 
 ---
 
-## 🏗️ Architecture du Projet
+##  Architecture du Projet
 
 ### Structure des Dossiers (Anglais)
 
@@ -78,7 +78,7 @@ TP4_WEB/
 
 ---
 
-## 📘 Conventions de Nommage
+##  Conventions de Nommage
 
 ### Fichiers et Dossiers
 
@@ -165,7 +165,7 @@ function sendEmailNotification()
 
 ---
 
-## 🧱 Conventions PHP
+##  Conventions PHP
 
 ### Structure Standard des Fichiers
 
@@ -200,7 +200,7 @@ Ordre obligatoire :
 
 ---
 
-## ⚙️ Conventions JavaScript
+##  Conventions JavaScript
 
 ### Organisation du Code
 
@@ -250,7 +250,7 @@ Commentaires en anglais pour :
 
 ---
 
-## 🗄️ Conventions Base de Données
+##  Conventions Base de Données
 
 ### Tables (Français - snake_case - singulier)
 
@@ -313,7 +313,7 @@ localisation
 
 ---
 
-## 💬 Documentation et Commentaires
+##  Documentation et Commentaires
 
 ### Règle Absolue
 
@@ -335,7 +335,7 @@ localisation
 
 ---
 
-## 🚨 Gestion des Erreurs
+##  Gestion des Erreurs
 
 ### PHP
 
@@ -370,7 +370,7 @@ try {
 
 ---
 
-## 🔐 Sécurité
+##  Sécurité
 
 ### Authentification
 
@@ -406,7 +406,7 @@ try {
 
 ---
 
-## ⚡ Performances
+##  Performances
 
 ### Requêtes SQL
 
@@ -428,7 +428,7 @@ try {
 
 ---
 
-## 🌳 Versioning Git
+##  Versioning Git
 
 ### Messages de Commit (Anglais)
 
@@ -446,7 +446,7 @@ type: description courte
 - `test:` Tests
 - `chore:` Maintenance
 
-✅ **Exemples :**
+ **Exemples :**
 ```
 feat: add terrain image upload
 fix: correct price calculation
@@ -466,7 +466,7 @@ hotfix/security-patch
 
 ---
 
-## 📦 Format des Réponses JSON
+##  Format des Réponses JSON
 
 ### Structure Standard
 
@@ -503,7 +503,7 @@ hotfix/security-patch
 
 ---
 
-## 📑 Récapitulatif Exécutif
+##  Récapitulatif Exécutif
 
 ### Règles Essentielles
 
@@ -529,7 +529,7 @@ hotfix/security-patch
 
 ---
 
-## 📖 Glossaire Technique
+## Glossaire Technique
 
 ### Correspondance Français-Anglais
 
@@ -570,7 +570,7 @@ hotfix/security-patch
 
 ---
 
-## 🎓 Conclusion
+## Conclusion
 
 ### Importance du Respect des Conventions
 
@@ -609,7 +609,7 @@ Toute modification doit être :
 
 ---
 
-## 🔧 Références
+##  Références
 
 ### Standards Appliqués
 - **PSR-1** : Basic Coding Standard (PHP)
