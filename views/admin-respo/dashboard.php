@@ -131,54 +131,20 @@
               </div>
               <div class="p-4">
                 <ul class="divide-y divide-slate-100">
+                  <?php foreach($_SESSION['activites_recents'] as $activite): ?>
                   <li class="py-4 hover:bg-slate-50 transition">
                     <div class="flex items-start justify-between gap-4">
                       <div class="flex items-start gap-3">
                         <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold bg-green-500">MA</div>
                         <div>
-                          <div class="text-slate-800 font-medium">Mohamed Ali</div>
-                          <div class="text-slate-500 text-sm">a réservé <span class="font-medium text-slate-700">Terrain A - Mini Foot</span></div>
+                          <div class="text-slate-800 font-medium"><?=$activite['utilisateur']?></div>
+                          <div class="text-slate-500 text-sm"><?=$activite['action']?><span class="font-medium text-slate-700"><?=$activite['date_action']?></span></div>
                         </div>
                       </div>
-                      <div class="text-sm text-slate-400 whitespace-nowrap">il y a 5 min</div>
+                      <div class="text-sm text-slate-400 whitespace-nowrap"><?=$activite['date_action']?></div>
                     </div>
                   </li>
-                  <li class="py-4 hover:bg-slate-50 transition">
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold bg-red-500">FZ</div>
-                        <div>
-                          <div class="text-slate-800 font-medium">Fatima Zahra</div>
-                          <div class="text-slate-500 text-sm">a annulé <span class="font-medium text-slate-700">Terrain B - Grand</span></div>
-                        </div>
-                      </div>
-                      <div class="text-sm text-slate-400 whitespace-nowrap">il y a 15 min</div>
-                    </div>
-                  </li>
-                  <li class="py-4 hover:bg-slate-50 transition">
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold bg-blue-500">YB</div>
-                        <div>
-                          <div class="text-slate-800 font-medium">Youssef Ben</div>
-                          <div class="text-slate-500 text-sm">a payé <span class="font-medium text-slate-700">Facture #1234</span></div>
-                        </div>
-                      </div>
-                      <div class="text-sm text-slate-400 whitespace-nowrap">il y a 30 min</div>
-                    </div>
-                  </li>
-                  <li class="py-4 hover:bg-slate-50 transition">
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold bg-purple-500">SM</div>
-                        <div>
-                          <div class="text-slate-800 font-medium">Sarah Mansouri</div>
-                          <div class="text-slate-500 text-sm">s'est inscrit à <span class="font-medium text-slate-700">Tournoi Champions</span></div>
-                        </div>
-                      </div>
-                      <div class="text-sm text-slate-400 whitespace-nowrap">il y a 1h</div>
-                    </div>
-                  </li>
+                  <?php endforeach; ?>
                 </ul>
               </div>
             </div>
@@ -258,34 +224,7 @@
       });
 
       // Pie: Type de Terrain
-      const ctxPie = document.getElementById('chartTypeTerrain').getContext('2d');
-      window.chartTypeTerrain = new Chart(ctxPie, {
-        type: 'doughnut',
-        data: {
-          labels: ['Terrain Moyen <?=$_SESSION['total_moyenne']?>%', 'Mini Foot <?=$_SESSION['total_minifoot']?>%', 'Grand Terrain <?=$_SESSION['total_Grand']?>%'],
-          datasets: [{
-            data: [<?=$_SESSION['total_moyenne']?>,<?=$_SESSION['total_minifoot']?> , <?=$_SESSION['total_Grand']?>],
-            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
-            hoverOffset: 15,
-            borderWidth: 0,
-          }],
-        },
-        options: {
-          maintainAspectRatio: false,
-          responsive: true,
-          animation: { duration: 900, easing: 'easeOutQuart' },
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: '#475569',
-                font: { size: 12 },
-                padding: 15,
-              }
-            }
-          },
-        },
-      });
+    
 
                 // Toggle Sidebar
               document.addEventListener('DOMContentLoaded', () => {
@@ -365,8 +304,15 @@
               });
             });
     </script>
-    <script src="/js/Ajax_Admin.js"></script>
+    <!-- 
+      EXPLICATION : Inclusion du script AJAX.
+      Ce script contient toute la logique pour mettre à jour les statistiques de manière asynchrone.
+    -->
+    <script src="/assets/js/Ajax_Admin.js"></script>
     <script>
+      // EXPLICATION : Appel initial de la fonction AJAX.
+      // Dès que le contenu de la page est chargé (DOMContentLoaded), on exécute une première fois la fonction
+      // pour s'assurer que les données affichées sont les plus récentes, sans attendre le premier intervalle de 3 secondes.
       document.addEventListener('DOMContentLoaded', () => {
         if (typeof Ajax_Dashbord_Statistique === 'function') {
           Ajax_Dashbord_Statistique();

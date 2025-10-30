@@ -121,6 +121,39 @@ for ($i = 0; $i < 6; $i++) {
     $_SESSION['total_moyenne'] = ($_SESSION['total_moyenne'] / $total) * 100;
     $_SESSION['total_Grand'] = ($_SESSION['total_Grand'] / $total) * 100;
 
+ // Activité récents requête SQL
+$stmt = $pdo->prepare("
+(
+    SELECT 
+        CONCAT(u.prenom, ' ', u.nom) AS utilisateur,
+        CASE 
+            WHEN r.statut = 'confirmee' THEN CONCAT('a réservé ', t.nom_te, ' - ', t.categorie)
+            WHEN r.statut = 'annulee' THEN CONCAT('a annulé ', t.nom_te, ' - ', t.categorie)
+            ELSE CONCAT('a effectué une action sur ', t.nom_te)
+        END AS action,
+        r.date_reservation AS date_action
+    FROM reservation r
+    INNER JOIN utilisateur u ON r.id_joueur = u.email
+    INNER JOIN terrain t ON r.id_terrain = t.id_terrain
+)
+UNION ALL
+(
+    SELECT 
+        CONCAT(u.prenom, ' ', u.nom) AS utilisateur,
+        CONCAT('a reçu une facture #', f.id_facture, ' de ', f.montant_total, ' DH') AS action,
+        f.date_facture AS date_action
+    FROM facture f
+    INNER JOIN reservation r ON f.id_reservation = r.id_reservation
+    INNER JOIN utilisateur u ON r.id_joueur = u.email
+)
+ORDER BY date_action DESC
+LIMIT 3
+");
+
+$stmt->execute();
+$activites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$_SESSION['activites_recents'] = $activites;
+
 
 
 

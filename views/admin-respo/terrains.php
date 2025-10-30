@@ -551,8 +551,10 @@ $pageTitle = "Gestion des Terrains";
                             showNotification(response.message, 'success');
                             closeModal();
                             loadTerrains();
+                            triggerStatUpdate(); // Appel de la fonction unifiée
+                        
                         } else {
-                            showNotification(response.message || 'Erreur lors de l\'enregistrement', 'error');
+                            showNotification(response.message || "Erreur lors de l'enregistrement", 'error');
                         }
                     } catch (e) {
                         showNotification('Erreur lors du traitement de la réponse', 'error');
@@ -600,6 +602,7 @@ $pageTitle = "Gestion des Terrains";
                             showNotification(response.message, 'success');
                             closeDeleteModal();
                             loadTerrains();
+                            triggerStatUpdate(); // Appel de la fonction unifiée
                         } else {
                             showNotification(response.message || 'Erreur lors de la suppression', 'error');
                         }
@@ -612,6 +615,21 @@ $pageTitle = "Gestion des Terrains";
             xhr.send(JSON.stringify({
                 id_terrain: deleteTerrainId
             }));
+        }
+
+        /**
+         * NOUVEAU : Fonction unifiée pour déclencher la mise à jour des statistiques.
+         * Elle assure que les autres onglets sont notifiés et que la page actuelle est mise à jour.
+         */
+        function triggerStatUpdate() {
+            // 1. Notifier les autres onglets via localStorage.
+            // L'ajout d'un nombre aléatoire garantit que l'événement `storage` est toujours déclenché.
+            localStorage.setItem('update_statistiques', `${Date.now()}-${Math.random()}`);
+
+            // 2. Mettre à jour les statistiques sur la page actuelle (si la fonction existe).
+            if (typeof Ajax_Dashbord_Statistique === 'function') {
+                Ajax_Dashbord_Statistique();
+            }
         }
 
         // Fermer le modal principal
@@ -682,6 +700,7 @@ $pageTitle = "Gestion des Terrains";
             return labels[disponibilite] || disponibilite;
         }
     </script>
+    <script src="../../assets/js/Ajax_Admin.js"></script>
 </body>
 
 </html>
