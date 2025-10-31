@@ -45,22 +45,23 @@ Cette convention s'applique à :
 TP4_WEB/
 │
 ├── actions/              # Scripts de traitement backend
-│   ├── admin-respo/      # Actions admin/responsable
+│   ├── admin-manager/      # Actions admin/responsable
 │   ├── auth/             # Authentification
-│   └── joueur/           # Actions joueur
+│   └── player/           # Actions joueur
 │
 ├── assets/               # Ressources statiques
 │   ├── images/
 │   └── js/
+│   └──css/
 │
 ├── config/               # Configuration
 │
 ├── includes/             # Composants réutilisables
 │
 └── views/                # Interfaces utilisateur
-    ├── admin-respo/
+    ├── admin-manager/
     ├── auth/
-    └── joueur/
+    └── player/
 ```
 
 ### Principes Organisationnels
@@ -72,8 +73,8 @@ TP4_WEB/
 - **includes/** : Composants partagés
 
 #### Organisation par Rôle
-- **admin-respo/** : Fonctionnalités administration
-- **joueur/** : Fonctionnalités joueur
+- **admin-manager/** : Fonctionnalités administration
+- **player/** : Fonctionnalités joueur
 - **auth/** : Authentification commune
 
 ---
@@ -87,9 +88,7 @@ Format : lowercase avec tirets
 
 
 ```
-admin-respo/
-user-management/
-payment-processing/
+admin-manager/
 ```
 
 #### Fichiers PHP
@@ -98,29 +97,26 @@ payment-processing/
 
 
 ```
-add_terrain.php
+add_stades.php
 edit_user.php
 delete_reservation.php
-get_terrains.php
+get_stades.php
 ```
 
 **Vues :** `entity-description.php` (pluriel pour listes)
 
 
-```
-terrains.php
+``
+stades.php
 dashboard.php
-user-profile.php
 ```
 
 **Actions Métier :** `verb_object.php`
 
 
 ```
-create_reservation.php
-send_invitation.php
-validate_payment.php
-process_upload.php
+add_stades.php
+delete_slot.php
 ```
 
 ### Variables
@@ -211,7 +207,6 @@ Ordre recommandé :
 4. Event listeners
 5. Fonctions AJAX
 6. Fonctions utilitaires
-7. Helpers
 
 ### Nommage
 
@@ -230,7 +225,6 @@ function showNotification()
 
 ```js
 const MAX_FILE_SIZE = 5242880
-const API_ENDPOINT = '/api/'
 ```
 
 ### AJAX
@@ -325,7 +319,6 @@ localisation
 - Logique complexe
 - Algorithmes non évidents
 - Sections de code importantes
-- TODOs et FIXMEs
 
 **Format :**
 ```php
@@ -383,17 +376,9 @@ try {
 
 **Toujours :**
 - Valider le type de données
-- Vérifier les valeurs min/max
-- Utiliser des whitelists pour les énumérations
 - Sanitizer les noms de fichiers
 - Valider les emails et téléphones
 
-### SQL
-
-**Obligatoire :**
-- Utiliser UNIQUEMENT des prepared statements
-- Ne JAMAIS concaténer des variables dans SQL
-- Binder les paramètres avec leur type
 
 ### Fichiers Uploadés
 
@@ -402,29 +387,16 @@ try {
 - Taille maximale
 - Extension valide
 - Nom de fichier sanitizé
-- Stockage sécurisé
 
 ---
 
-## Performances
-
-### Requêtes SQL
-
-**Optimisations :**
-- Utiliser les JOINs pour éviter N+1 queries
-- Limiter les résultats avec LIMIT
-- Créer des index sur colonnes de recherche
-- Sélectionner uniquement les colonnes nécessaires
-- Utiliser WHERE avant JOIN quand possible
 
 ### Frontend
 
 **Bonnes pratiques :**
 - Debounce sur les recherches (500ms)
 - Cache pour données peu changeantes
-- Lazy loading des images
 - Pagination des listes longues
-- Minimiser les requêtes AJAX
 
 ---
 
@@ -440,28 +412,12 @@ type: description courte
 **Types :**
 - `feat:` Nouvelle fonctionnalité
 - `fix:` Correction de bug
-- `docs:` Documentation
-- `style:` Formatage
-- `refactor:` Refactorisation
 - `test:` Tests
-- `chore:` Maintenance
 
  **Exemples :**
 ```
 feat: add terrain image upload
 fix: correct price calculation
-docs: update API documentation
-```
-
-### Branches
-
-**Format :** `type/description-with-hyphens`
-
-
-```
-feature/terrain-management
-fix/reservation-validation
-hotfix/security-patch
 ```
 
 ---
@@ -517,34 +473,9 @@ hotfix/security-patch
 | Tables DB | Français, snake_case, singulier | `terrain` |
 | Colonnes DB | Français, snake_case | `prix_heure` |
 | Commits | Anglais, format type: message | `feat: add feature` |
-| Branches | Anglais, type/description | `feature/new-module` |
 
-### Hiérarchie des Priorités
-
-1. **Sécurité** - Aucun compromis
-2. **Fonctionnalité** - Code qui marche
-3. **Conventions** - Respect des standards
-4. **Performance** - Optimisation
-5. **Documentation** - Clarté
 
 ---
-
-## Glossaire Technique
-
-### Correspondance Français-Anglais
-
-| Français (DB) | Anglais (Code) | Description |
-|---------------|----------------|-------------|
-| terrain | terrain | Terrain de football |
-| utilisateur | user | Compte utilisateur |
-| responsable | manager | Responsable de terrain |
-| réservation | reservation | Réservation |
-| créneau | time_slot | Créneau horaire |
-| disponibilité | availability | Statut de disponibilité |
-| prix_heure | hourly_rate | Prix à l'heure |
-| localisation | location | Adresse physique |
-| équipe | team | Équipe de joueurs |
-| tournoi | tournament | Tournoi |
 
 ### Catégories Métier
 
@@ -571,63 +502,5 @@ hotfix/security-patch
 ---
 
 ## Conclusion
-
-### Importance du Respect des Conventions
-
-Le respect rigoureux de cette convention de codage est **essentiel** pour :
-
-1. **Qualité professionnelle** : Code qui répond aux standards de l'industrie
-2. **Maintenabilité** : Facilité de modification et d'évolution
-3. **Collaboration efficace** : Compréhension rapide entre développeurs
-4. **Évolutivité** : Intégration facile de nouveaux développeurs
-5. **Documentation naturelle** : Code auto-explicatif
-
-### Application Pratique
-
-**Règle d'or :**\
-*"Lorsque vous écrivez du code, pensez en anglais. Lorsque vous structurez vos données métier, pensez en français."*
-
-Cette distinction permet de :
-- Respecter les standards techniques internationaux
-- Préserver la cohérence métier locale
-- Faciliter la maintenance à long terme
-- Permettre l'évolution internationale si nécessaire
-
-### Évolution Continue
-
-Cette convention est un **document vivant** qui peut évoluer selon :
-- Les besoins du projet
-- Les nouvelles technologies adoptées
-- Les retours d'expérience de l'équipe
-- Les standards émergents de l'industrie
-
-Toute modification doit être :
-- Documentée
-- Communiquée à l'équipe
-- Appliquée de manière cohérente
-- Versionnée avec le projet
-
----
-
-##  Références
-
-### Standards Appliqués
-- **PSR-1** : Basic Coding Standard (PHP)
-- **PSR-12** : Extended Coding Style (PHP)
-- **Airbnb JavaScript Style Guide** (JavaScript)
-- **REST API Design Best Practices** (API)
-
-### Outils Recommandés
-- **PHPStan** : Analyse statique PHP
-- **ESLint** : Linter JavaScript
-- **Git** : Versioning
-- **PHPDoc** : Documentation PHP
-- **JSDoc** : Documentation JavaScript
-
----
-
-**Date de dernière mise à jour :** Octobre 2025  
-**Version :** 1.0  
-**Auteur :** Équipe de Développement TerrainBook
 
 *Ce document constitue la référence officielle pour tous les développements sur le projet TerrainBook. Son respect est obligatoire pour garantir la qualité et la cohérence du code produit.*

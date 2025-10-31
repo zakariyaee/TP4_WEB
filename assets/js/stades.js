@@ -309,7 +309,7 @@ function openAddModal() {
   document.getElementById("terrainForm").reset();
   document.getElementById("terrainId").value = "";
 
-  // CORRECTION: Réinitialiser complètement l'affichage de l'image
+  // Réinitialiser complètement l'affichage de l'image
   clearImage();
 
   document.getElementById("terrainModal").classList.remove("hidden");
@@ -348,7 +348,7 @@ function editTerrain(id) {
           document.getElementById("id_responsable").value =
             terrain.id_responsable || "";
 
-          // CORRECTION: Gérer l'affichage de l'image existante
+          // Gérer l'affichage de l'image existante
           if (terrain.image) {
             // Afficher l'image existante
             const imagePath = `../../assets/images/terrains/${terrain.image}`;
