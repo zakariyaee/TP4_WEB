@@ -52,7 +52,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Total Réservations</p>
                   <h3 id="stat-total-reservations" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_reservations']?></h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> +12.5% vs mois dernier</p>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-calendar text-blue-600 text-xl"></i>
@@ -64,8 +64,8 @@
               <div class="flex items-start justify-between">
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Revenue mensuels</p>
-                  <h3 id="stat-revenue-total" class="text-4xl font-bold text-slate-800"><?=$_SESSION['revenue_total']?> €</h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> +8.2% vs mois dernier</p>
+                  <h3 id="stat-revenue-total" class="text-4xl font-bold text-slate-800"><?=$_SESSION['revenue_total']?> DH</h3>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-euro-sign text-purple-600 text-xl"></i>
@@ -78,7 +78,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Terrains Actifs</p>
                   <h3 id="stat-total-terrains" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_terrains']?></h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> +2 vs mois dernier</p>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-map-location-dot text-orange-600 text-xl"></i>
@@ -91,7 +91,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Utilisateurs Actifs</p>
                   <h3 id="stat-total-joueurs" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_joueurs']?></h3>
-                  <p class="text-red-600 text-xs mt-2"><i class="fas fa-arrow-down"></i> -3.1% vs mois dernier</p>
+                  <p class="text-red-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-user-friends text-teal-600 text-xl"></i>
@@ -224,100 +224,12 @@
       });
 
       // Pie: Type de Terrain
-    
-
-                // Toggle Sidebar
-              document.addEventListener('DOMContentLoaded', () => {
-              const sidebar = document.getElementById('sidebar');
-              const toggleButton = document.getElementById('toggleSidebar');
-              const content = document.getElementById('content');
-              
-              // État initial basé sur la largeur de l'écran
-              let isSidebarOpen = window.innerWidth >= 1024;
-              
-              // Fonction optimisée pour basculer la sidebar
-              const toggleSidebar = () => {
-                isSidebarOpen = !isSidebarOpen;
-                updateSidebarState();
-              };
-              
-              // Fonction unique pour mettre à jour l'état de la sidebar
-              const updateSidebarState = () => {
-                // Utilisation de requestAnimationFrame pour des animations fluides
-                requestAnimationFrame(() => {
-                  if (isSidebarOpen) {
-                    sidebar.classList.remove('w-0', 'opacity-0', '-translate-x-full');
-                    sidebar.classList.add('w-64', 'opacity-100', 'translate-x-0');
-                    content.classList.remove('pl-0');
-                    content.classList.add('pl-64');
-                  } else {
-                    sidebar.classList.remove('w-64', 'opacity-100', 'translate-x-0');
-                    sidebar.classList.add('w-0', 'opacity-0', '-translate-x-full');
-                    content.classList.remove('pl-64');
-                    content.classList.add('pl-0');
-                  }
-                });
-              };
-              
-              // Gestionnaire d'événement avec debouncing
-              if (toggleButton) {
-                toggleButton.addEventListener('click', toggleSidebar);
-              }
-              
-              // Gestion responsive avec debouncing
-              let resizeTimeout;
-              const handleResize = () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                  const shouldBeOpen = window.innerWidth >= 1024;
-                  
-                  // Éviter les mises à jour inutiles
-                  if (isSidebarOpen !== shouldBeOpen) {
-                    isSidebarOpen = shouldBeOpen;
-                    updateSidebarState();
-                  }
-                }, 100); // Debounce de 100ms
-              };
-              
-              window.addEventListener('resize', handleResize);
-              
-              // Initialisation
-              updateSidebarState();
-              
-              // Fermer la sidebar en cliquant à l'extérieur (sur mobile)
-              document.addEventListener('click', (e) => {
-                if (window.innerWidth < 1024 && 
-                    isSidebarOpen && 
-                    !sidebar.contains(e.target) && 
-                    e.target !== toggleButton) {
-                  isSidebarOpen = false;
-                  updateSidebarState();
-                }
-              });
-              
-              // Gestion des touches clavier (Escape pour fermer)
-              document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isSidebarOpen && window.innerWidth < 1024) {
-                  isSidebarOpen = false;
-                  updateSidebarState();
-                }
-              });
-            });
     </script>
     <!-- 
       EXPLICATION : Inclusion du script AJAX.
       Ce script contient toute la logique pour mettre à jour les statistiques de manière asynchrone.
     -->
     <script src="/assets/js/Ajax_Admin.js"></script>
-    <script>
-      // EXPLICATION : Appel initial de la fonction AJAX.
-      // Dès que le contenu de la page est chargé (DOMContentLoaded), on exécute une première fois la fonction
-      // pour s'assurer que les données affichées sont les plus récentes, sans attendre le premier intervalle de 3 secondes.
-      document.addEventListener('DOMContentLoaded', () => {
-        if (typeof Ajax_Dashbord_Statistique === 'function') {
-          Ajax_Dashbord_Statistique();
-        }
-      });
-    </script>
+    <script src="/assets/js/dashbord.js"></script> 
   </body>
   </html>

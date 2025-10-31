@@ -1,27 +1,35 @@
 <?php
 $_SESSION['revenue_total']=0;
-$requete="Select id_terrain from reservation where Month(date_reservation)=Month(CURRENT_DATE()) AND Year(date_reservation)=Year(CURRENT_DATE())";
-$req=$pdo->prepare($requete);
-$req->execute();
-$ids_terrain=$req->fetchAll(PDO::FETCH_COLUMN);
-foreach($ids_terrain as $id_terrain){
-    $requete="Select prix_heure from terrain where id_terrain=:id_terrain";
-    $req=$pdo->prepare($requete);
-    $req->bindParam(':id_terrain',$id_terrain);
-    $req->execute();
-    $_SESSION['revenue_total']+=$req->fetchColumn();
-}
-$req1="select id_object ,quantite from reservation_objet where Month(Date_reservation_objet)=Month(CURRENT_DATE()) AND Year(Date_reservation_objet)=Year(CURRENT_DATE())";
-$req=$pdo->prepare($req1);
-$req->execute();
-$reservations_objets=$req->fetchAll(PDO::FETCH_ASSOC);
-foreach($reservations_objets as $reservation_objet){
-    $requete="Select prix from objet where id_object=:id_objet";
-    $req=$pdo->prepare($requete);
-    $req->bindParam(':id_objet',$reservation_objet['id_objet']);
-    $req->execute();
-    $_SESSION['revenue_total']+=$req->fetchColumn()*$reservation_objet['quantite'];
-}
+$revenue_total = 0;
+
+    // --- Revenu des réservations de terrains ---
+    $stmt = $pdo->prepare("
+        SELECT SUM(t.prix_heure) AS total_terrains
+        FROM reservation r
+        INNER JOIN terrain t ON r.id_terrain = t.id_terrain
+        WHERE MONTH(r.date_reservation) = MONTH(CURRENT_DATE())
+          AND YEAR(r.date_reservation) = YEAR(CURRENT_DATE())
+          AND r.statut = 'confirmee'
+    ");
+    $stmt->execute();
+    $terrain_total = (float)($stmt->fetchColumn() ?: 0);
+
+    // --- Revenu des réservations d’objets ---
+    $stmt = $pdo->prepare("
+        SELECT SUM(o.prix * ro.quantite) AS total_objets
+        FROM reservation_objet ro
+        INNER JOIN objet o ON ro.id_object = o.id_object
+        WHERE MONTH(ro.Date_reservation_objet) = MONTH(CURRENT_DATE())
+          AND YEAR(ro.Date_reservation_objet) = YEAR(CURRENT_DATE())
+    ");
+    $stmt->execute();
+    $objet_total = (float)($stmt->fetchColumn() ?: 0);
+
+    // --- Total général ---
+$revenue_total = $terrain_total + $objet_total;
+$_SESSION['revenue_total']=$revenue_total;
+
+// Calcul du nombre total de terrains disponibles
 $requete="Select count(*) from utilisateur where role='joueur'";
 $req=$pdo->prepare($requete);
 $req->execute();

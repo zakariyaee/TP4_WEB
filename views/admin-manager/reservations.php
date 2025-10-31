@@ -1,8 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once '../../config/database.php';
+require_once '../../actions/admin-manager/reservation/validate_reservation.php'; // Inclusion du fichier d'action
+
+// Récupérer les filtres depuis la session
+$filterDate = $_SESSION['currentFilters']['date'] ?? '';
+$filterStatus = $_SESSION['currentFilters']['status'] ?? '';
+$searchQuery = $_SESSION['currentFilters']['search'] ?? '';
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -20,11 +25,11 @@ if (session_status() === PHP_SESSION_NONE) {
         <?php include_once '../../includes/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <main id="content" class="flex-1 ml-64 transition-all duration-300">
+        <main id="content" class="flex-1 pl-0 transition-all duration-300">
             <div class="p-8">
                 <!-- Header -->
                 <div class="flex items-center gap-4 mb-8">
-                    <button id="toggleSidebar" class="p-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white shadow transition duration-300">
+                    <button id="toggleSidebar" class="p-2 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow transition duration-300">
                         <i class="fas fa-bars text-lg"></i>
                     </button>
                     <div>
@@ -37,19 +42,19 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">Total Réservations</p>
-                        <h3 class="text-3xl font-bold text-gray-900">5</h3>
+                        <h3 class="text-3xl font-bold text-gray-900"><?= $_SESSION['totalReservations'] ?? 0 ?></h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">Confirmées</p>
-                        <h3 class="text-3xl font-bold text-blue-600">7</h3>
+                        <h3 class="text-3xl font-bold text-blue-600"><?= $_SESSION['totalConfirmedReservations'] ?? 0 ?></h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">En Attente</p>
-                        <h3 class="text-3xl font-bold text-yellow-600">10</h3>
+                        <h3 class="text-3xl font-bold text-yellow-600"><?= $_SESSION['totalPendingReservations'] ?? 0 ?></h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                        <p class="text-gray-600 text-sm mb-1">Revenus (Payées)</p>
-                        <h3 class="text-3xl font-bold text-green-600"><?=$_SESSION['revenue_total']?> DH</h3>
+                        <p class="text-gray-600 text-sm mb-1">Revenus (Confirmées)</p>
+                        <h3 class="text-3xl font-bold text-green-600"><?= $_SESSION['totalRevenue'] ?? '0.00' ?> DH</h3>
                     </div>
                 </div>
 
@@ -61,7 +66,7 @@ if (session_status() === PHP_SESSION_NONE) {
                             <input
                                 type="text"
                                 id="searchInput"
-                                value=""
+                                value="<?= htmlspecialchars($searchQuery) ?>"
                                 placeholder="Rechercher..."
                                 class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                         </div>
@@ -85,6 +90,16 @@ if (session_status() === PHP_SESSION_NONE) {
                             <i class="fas fa-redo mr-2"></i>Réinitialiser
                         </button>
                     </div>
+                    
+                    <!-- Résumé des résultats -->
+                    <?php if (!empty($filterDate) || !empty($filterStatus) || !empty($searchQuery)): ?>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-sm text-gray-600">
+                                <i class="fas fa-filter mr-2"></i>
+                                <strong><?= count($_SESSION['reservationDetail'] ?? []) ?></strong> réservation(s) trouvée(s) avec les filtres appliqués
+                            </p>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Table -->
@@ -106,87 +121,105 @@ if (session_status() === PHP_SESSION_NONE) {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <?php if (empty($reservations)): ?>
+                                <?php if (empty($_SESSION['reservationDetail'])): ?>
                                     <tr>
                                         <td colspan="10" class="px-6 py-12 text-center text-gray-500">
-                                            <i class="fas fa-inbox text-4xl mb-3"></i>
-                                            <p>Aucune réservation trouvée</p>
+                                            <i class="fas fa-inbox text-4xl mb-3 block"></i>
+                                            <p class="text-lg font-medium">Aucune réservation trouvée</p>
+                                            <?php if (!empty($filterDate) || !empty($filterStatus) || !empty($searchQuery)): ?>
+                                                <p class="text-sm mt-2">Essayez de modifier vos filtres</p>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($reservations as $r): ?>
-                                        <tr class="hover:bg-gray-50 transition">
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm font-medium text-gray-900">4</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm text-gray-900">7</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm text-gray-600">8</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm text-gray-900">5</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm text-gray-900"><?= substr($r['heure_debut'], 0, 5) ?></span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm text-gray-900">5</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="text-sm font-medium text-gray-900"> DH</span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <?php if (!empty($r['extras'])): ?>
-                                                    <?php foreach (explode(', ', $r['extras']) as $extra): ?>
-                                                        <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1">
-                                                            <?= htmlspecialchars($extra) ?>
-                                                        </span>
-                                                    <?php endforeach; ?>
-                                                <?php else: ?>
-                                                    <span class="text-sm text-gray-500">-</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <?php
-                                                $statusClasses = [
-                                                    'confirmee' => 'bg-blue-100 text-blue-700',
-                                                    'en_attente' => 'bg-yellow-100 text-yellow-700',
-                                                    'terminee' => 'bg-green-100 text-green-700',
-                                                    'annulee' => 'bg-red-100 text-red-700'
-                                                ];
-                                                $statusLabels = [
-                                                    'confirmee' => 'Confirmée',
-                                                    'en_attente' => 'En attente',
-                                                    'terminee' => 'Terminée',
-                                                    'annulee' => 'Annulée'
-                                                ];
-                                                ?>
-                                                <span class="px-3 py-1 <?= $statusClasses[$r['statut']] ?> rounded-full text-xs font-medium">
-                                                    <?= $statusLabels[$r['statut']] ?>
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <div class="flex gap-2">
-                                                    <?php if ($r['statut'] === 'en_attente'): ?>
-                                                        <button onclick="validateReservation(<?= $r['id_reservation'] ?>)" 
-                                                                class="text-green-600 hover:text-green-700" 
-                                                                title="Valider">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                    <?php if ($r['statut'] !== 'annulee'): ?>
-                                                        <button onclick="cancelReservation(<?= $r['id_reservation'] ?>)" 
-                                                                class="text-red-600 hover:text-red-700" 
-                                                                title="Annuler">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+                                   <?php foreach ($_SESSION['reservationDetail'] as $reservation): ?>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-medium text-gray-900">#<?= $reservation['id_reservation'] ?></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-900"><?= htmlspecialchars($reservation['nom'] . ' ' . $reservation['prenom']) ?></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-600"><?= htmlspecialchars($reservation['nom_terrain']) ?></span>
+                                    <br>
+                                    <span class="text-xs text-gray-500"><?= htmlspecialchars($reservation['categorie_terrain']) ?></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-900"><?= date('d/m/Y', strtotime($reservation['date_debut'])) ?></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-900"><?= substr($reservation['heure_debut'], 0, 5) ?> - <?= substr($reservation['heure_fin'], 0, 5) ?></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-900"><?= $reservation['duree'] ?>h</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm">
+                                        <div class="font-medium text-gray-900"><?= number_format($reservation['prix_total'], 2) ?> DH</div>
+                                        <div class="text-xs text-gray-500">
+                                            Terrain: <?= number_format($reservation['prix_terrain'], 2) ?> DH
+                                            <?php if ($reservation['prix_extras'] > 0): ?>
+                                                <br>Extras: <?= number_format($reservation['prix_extras'], 2) ?> DH
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <?php if (!empty($reservation['extras'])): ?>
+                                        <?php foreach (explode(', ', $reservation['extras']) as $extra): ?>
+                                            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1 mb-1">
+                                                <?= htmlspecialchars($extra) ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="text-sm text-gray-500">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <?php
+                                    $statusClasses = [
+                                        'confirmee' => 'bg-blue-100 text-blue-700',
+                                        'en_attente' => 'bg-yellow-100 text-yellow-700',
+                                        'terminee' => 'bg-green-100 text-green-700',
+                                        'annulee' => 'bg-red-100 text-red-700'
+                                    ];
+                                    $statusLabels = [
+                                        'confirmee' => 'Confirmée',
+                                        'en_attente' => 'En attente',
+                                        'terminee' => 'Terminée',
+                                        'annulee' => 'Annulée'
+                                    ];
+                                    ?>
+                                    <span class="px-3 py-1 <?= $statusClasses[$reservation['statut']] ?> rounded-full text-xs font-medium">
+                                        <?= $statusLabels[$reservation['statut']] ?>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex gap-2">
+                                        <?php if ($reservation['statut'] === 'en_attente'): ?>
+                                            <button onclick="validateReservation(<?= $reservation['id_reservation'] ?>)" 
+                                                    class="text-green-600 hover:text-green-700" 
+                                                    title="Valider">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <?php if ($reservation['statut'] !== 'annulee' && $reservation['statut'] !== 'terminee'): ?>
+                                            <button onclick="cancelReservation(<?= $reservation['id_reservation'] ?>)" 
+                                                    class="text-red-600 hover:text-red-700" 
+                                                    title="Annuler">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <button onclick="viewDetails(<?= $reservation['id_reservation'] ?>)" 
+                                                class="text-blue-600 hover:text-blue-700" 
+                                                title="Détails">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -220,144 +253,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <!-- Notification -->
     <div id="notification" class="hidden fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50"></div>
 
-    <script>
-       // ============================================================
-// SCRIPT AJAX POUR ACTIONS DYNAMIQUES UNIQUEMENT
-// L'affichage initial se fait via PHP/HTML
-// ============================================================
-
-// ============================================================
-// 1. ACTIONS SUR LES RÉSERVATIONS (AJAX)
-// ============================================================
-function validateReservation(id) {
-    showModal('Voulez-vous confirmer cette réservation ?', () => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '../../actions/admin-respo/validate_reservation.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        showNotification('Réservation confirmée avec succès', 'success');
-                        // Recharger la page pour afficher les nouvelles données
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        showNotification(response.message || 'Erreur lors de la validation', 'error');
-                    }
-                } catch (e) {
-                    showNotification('Erreur lors de la validation', 'error');
-                }
-            }
-        };
-
-        xhr.send(JSON.stringify({ id_reservation: id }));
-    });
-}
-
-function cancelReservation(id) {
-    showModal('Voulez-vous annuler cette réservation ?', () => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '../../actions/admin-respo/cancel_reservation.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        showNotification('Réservation annulée', 'success');
-                        // Recharger la page pour afficher les nouvelles données
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        showNotification(response.message || 'Erreur lors de l\'annulation', 'error');
-                    }
-                } catch (e) {
-                    showNotification('Erreur lors de l\'annulation', 'error');
-                }
-            }
-        };
-
-        xhr.send(JSON.stringify({ id_reservation: id }));
-    });
-}
-
-// ============================================================
-// 2. FILTRES ET RECHERCHE (Rechargement de page)
-// ============================================================
-function applyFilters() {
-    const searchQuery = document.getElementById('searchInput').value;
-    const filterDate = document.getElementById('filterDate').value;
-    const filterStatus = document.getElementById('filterStatus').value;
-
-    // Construire l'URL avec les paramètres
-    const params = new URLSearchParams();
-    if (searchQuery) params.append('search', searchQuery);
-    if (filterDate) params.append('date', filterDate);
-    if (filterStatus) params.append('status', filterStatus);
-
-    // Recharger la page avec les filtres
-    window.location.href = '?' + params.toString();
-}
-
-function resetFilters() {
-    // Recharger la page sans paramètres
-    window.location.href = window.location.pathname;
-}
-
-// ============================================================
-// 3. MODAL DE CONFIRMATION
-// ============================================================
-function showModal(message, onConfirm) {
-    document.getElementById('modalMessage').textContent = message;
-    document.getElementById('confirmModal').classList.remove('hidden');
-    document.getElementById('confirmButton').onclick = () => {
-        onConfirm();
-        closeModal();
-    };
-}
-
-function closeModal() {
-    document.getElementById('confirmModal').classList.add('hidden');
-}
-
-// ============================================================
-// 4. NOTIFICATIONS
-// ============================================================
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500'
-    };
-    
-    notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 text-white ${colors[type]}`;
-    notification.textContent = message;
-    notification.classList.remove('hidden');
-    
-    setTimeout(() => notification.classList.add('hidden'), 3000);
-}
-
-// ============================================================
-// 5. ÉVÉNEMENTS (Debounce pour la recherche)
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Recherche avec debounce
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => applyFilters(), 800);
-    });
-
-    // Filtrage par date
-    document.getElementById('filterDate').addEventListener('change', applyFilters);
-
-    // Filtrage par statut
-    document.getElementById('filterStatus').addEventListener('change', applyFilters);
-});
-    </script>
+    <script src="../../assets/js/reservation.js"></script>
 </body>
 
 </html>
