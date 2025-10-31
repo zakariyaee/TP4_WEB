@@ -52,7 +52,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Total Réservations</p>
                   <h3 id="stat-total-reservations" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_reservations']?></h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> </p>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-calendar text-blue-600 text-xl"></i>
@@ -65,7 +65,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Revenue mensuels</p>
                   <h3 id="stat-revenue-total" class="text-4xl font-bold text-slate-800"><?=$_SESSION['revenue_total']?> DH</h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> </p>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-euro-sign text-purple-600 text-xl"></i>
@@ -78,7 +78,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Terrains Actifs</p>
                   <h3 id="stat-total-terrains" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_terrains']?></h3>
-                  <p class="text-green-600 text-xs mt-2"><i class="fas fa-arrow-up"></i> </p>
+                  <p class="text-green-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-map-location-dot text-orange-600 text-xl"></i>
@@ -91,7 +91,7 @@
                 <div>
                   <p class="text-slate-500 text-sm font-medium mb-2">Utilisateurs Actifs</p>
                   <h3 id="stat-total-joueurs" class="text-4xl font-bold text-slate-800"><?=$_SESSION['total_joueurs']?></h3>
-                  <p class="text-red-600 text-xs mt-2"><i class="fas fa-arrow-down"></i> </p>
+                  <p class="text-red-600 text-xs mt-2"></p>
                 </div>
                 <div class="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center">
                   <i class="fas fa-user-friends text-teal-600 text-xl"></i>
