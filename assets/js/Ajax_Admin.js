@@ -25,7 +25,7 @@ function Ajax_Dashbord_Statistique() {
             }
             
             if (StatEls.revenueTotal && typeof data.revenue_total !== 'undefined') {
-              StatEls.revenueTotal.textContent = data.revenue_total + ' €';
+              StatEls.revenueTotal.textContent = data.revenue_total + ' DH';
             }
             
             // CORRECTION : Mise à jour du nombre de terrains actifs
