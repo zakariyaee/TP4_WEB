@@ -1,18 +1,18 @@
-let currentTournoiId = null;
-let deleteTournoiId = null;
-let tournoisCache = new Map(); 
+let currentTournamentId = null;
+let deleteTournamentId = null;
+let tournamentsCache = new Map(); 
 let lastLoadTime = 0;
 let isLoading = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    loadTournois();
-    loadTerrains();
+    loadTournaments();
+    loadFields();
     setupEventListeners();
     
     // Clean cache every 5 minutes
     setInterval(() => {
-        tournoisCache.clear();
+        tournamentsCache.clear();
     }, 300000);
 });
 
@@ -29,18 +29,18 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     // Real-time search
     document.getElementById('searchInput').addEventListener('input', debounce(() => {
-        tournoisCache.clear();
-        loadTournois(true);
+        tournamentsCache.clear();
+        loadTournaments(true);
     }, 300)); // Reduced debounce time for better responsiveness
 
     // Filters
     document.getElementById('filterStatut').addEventListener('change', () => {
-        tournoisCache.clear();
-        loadTournois(true);
+        tournamentsCache.clear();
+        loadTournaments(true);
     });
     document.getElementById('filterType').addEventListener('change', () => {
-        tournoisCache.clear();
-        loadTournois(true);
+        tournamentsCache.clear();
+        loadTournaments(true);
     });
 
     // Form
@@ -80,8 +80,7 @@ function debounce(func, wait) {
  * 
  * @returns {void}
  */
-function loadTournois(forceRefresh = false) {
-    // Prevent multiple simultaneous requests
+function loadTournaments(forceRefresh = false) {
     if (isLoading) return;
     
     const search = document.getElementById('searchInput').value;
@@ -92,11 +91,11 @@ function loadTournois(forceRefresh = false) {
     const cacheKey = `${search}-${statut}-${type}`;
     
     // Check cache first (unless force refresh)
-    if (!forceRefresh && tournoisCache.has(cacheKey)) {
-        const cachedData = tournoisCache.get(cacheKey);
+    if (!forceRefresh && tournamentsCache.has(cacheKey)) {
+        const cachedData = tournamentsCache.get(cacheKey);
         // Use cache if data is less than 30 seconds old
         if (Date.now() - cachedData.timestamp < 30000) {
-            displayTournois(cachedData.tournois);
+            displayTournaments(cachedData.tournois);
             return;
         }
     }
@@ -126,12 +125,12 @@ function loadTournois(forceRefresh = false) {
 
                 if (response.success) {
                     // Cache the response
-                    tournoisCache.set(cacheKey, {
+                    tournamentsCache.set(cacheKey, {
                         tournois: response.tournois,
                         timestamp: Date.now()
                     });
                     
-                    displayTournois(response.tournois);
+                    displayTournaments(response.tournois);
                 } else {
                     showNotification(response.message || 'Erreur lors du chargement des tournois', 'error');
                 }
@@ -165,7 +164,7 @@ function loadTournois(forceRefresh = false) {
  * @param {Array} tournois - Array of tournament objects
  * @returns {void}
  */
-function displayTournois(tournois) {
+function displayTournaments(tournois) {
     const container = document.getElementById('tournoisContainer');
 
     if (tournois.length === 0) {
@@ -210,8 +209,8 @@ function displayTournois(tournois) {
                         <i class="fas fa-trophy text-white text-6xl opacity-50"></i>
                     </div>
                     <div class="absolute top-3 right-3">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${getStatutClass(tournoi.statut)}">
-                            ${getStatutLabel(tournoi.statut)}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(tournoi.statut)}">
+                            ${getStatusLabel(tournoi.statut)}
                         </span>
                     </div>
                     <div class="absolute top-3 left-3">
@@ -253,10 +252,10 @@ function displayTournois(tournois) {
                             ${tournoi.nb_inscrits || 0} inscrits
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="openInscrits(${tournoi.id_tournoi})" class="p-2 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Gérer les inscrits">
+                            <button onclick="openRegisteredTeams(${tournoi.id_tournoi})" class="p-2 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Gérer les inscrits">
                                 <i class="fas fa-users"></i>
                             </button>
-                            <button onclick="editTournoi(${tournoi.id_tournoi})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                            <button onclick="editTournament(${tournoi.id_tournoi})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button onclick="openDeleteModal(${tournoi.id_tournoi})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
@@ -278,7 +277,7 @@ function displayTournois(tournois) {
  * 
  * @returns {void}
  */
-function loadTerrains() {
+function loadFields() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
 
@@ -290,7 +289,7 @@ function loadTerrains() {
                 const response = JSON.parse(xhr.responseText);
 
                 if (response.success) {
-                    populateTerrainSelect(response.terrains);
+                    populateFieldSelect(response.terrains);
                 }
             } catch (e) {
                 // Error Management: Log error to console
@@ -312,7 +311,7 @@ function loadTerrains() {
  * @param {Array} terrains - Array of terrain objects
  * @returns {void}
  */
-function populateTerrainSelect(terrains) {
+function populateFieldSelect(terrains) {
     const select = document.getElementById('id_terrain');
     select.innerHTML = '<option value="">Sélectionner un terrain...</option>' +
         terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te} - ${t.categorie}</option>`).join('');
@@ -327,7 +326,7 @@ function populateTerrainSelect(terrains) {
  * @returns {void}
  */
 function openAddModal() {
-    currentTournoiId = null;
+    currentTournamentId = null;
     document.getElementById('modalTitle').textContent = 'Créer un tournoi';
     document.getElementById('tournoiForm').reset();
     document.getElementById('tournoiId').value = '';
@@ -348,8 +347,8 @@ function openAddModal() {
  * @param {number} id - Tournament ID to edit
  * @returns {void}
  */
-function editTournoi(id) {
-    currentTournoiId = id;
+function editTournament(id) {
+    currentTournamentId = id;
 
     const xhr = new XMLHttpRequest();
     xhr.open('GET', `../../actions/admin-manager/tournament/get_tournament.php?id=${id}`, true);
@@ -404,56 +403,54 @@ function editTournoi(id) {
  * @param {number} id - Tournament ID to view
  * @returns {void}
  */
-function viewTournoi(id) {
-    // TODO: Implement tournament detail view
-    showNotification('Fonctionnalité en cours de développement', 'info');
-}
+// Removed unused placeholder function `viewTournoi`
 
-// ================== Inscrits: Equipes & Matchs ==================
-let inscritsTournoiId = null;
-let pendingRemoveEquipeId = null;
+// ================== Registered Teams Section ==================
+let registeredTournamentId = null;
+let pendingRemoveTeamId = null;
 let pendingRemoveBtn = null;
 
-function openInscrits(id) {
-    inscritsTournoiId = id;
+function openRegisteredTeams(id) {
+    registeredTournamentId = id;
     document.getElementById('inscritsModal').classList.remove('hidden');
-    loadEquipesInscrites();
+    loadRegisteredTeams();
 }
 
-function closeInscritsModal() {
-    inscritsTournoiId = null;
+function closeRegisteredTeamsModal() {
+    registeredTournamentId = null;
     document.getElementById('inscritsModal').classList.add('hidden');
 }
-function openRemoveEquipe(idEquipe, btnEl) {
-    pendingRemoveEquipeId = idEquipe;
+
+function openRemoveTeam(idEquipe, btnEl) {
+    pendingRemoveTeamId = idEquipe;
     pendingRemoveBtn = btnEl;
     document.getElementById('deleteEquipeModal').classList.remove('hidden');
 }
 
-function closeDeleteEquipeModal() {
-    pendingRemoveEquipeId = null;
+function closeDeleteTeamModal() {
+    pendingRemoveTeamId = null;
     pendingRemoveBtn = null;
     document.getElementById('deleteEquipeModal').classList.add('hidden');
 }
 
-function confirmRemoveEquipe() {
-    if (!pendingRemoveEquipeId) return;
-    removeEquipe(pendingRemoveEquipeId, pendingRemoveBtn, true);
+function confirmRemoveTeam() {
+    if (!pendingRemoveTeamId) return;
+    removeTeam(pendingRemoveTeamId, pendingRemoveBtn, true);
 }
 
 // Tab handling removed; only teams are displayed
 
-function loadEquipesInscrites() {
-    if (!inscritsTournoiId) return;
+function loadRegisteredTeams() {
+    if (!registeredTournamentId) return;
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', `../../actions/admin-manager/tournament/get_teams_tournament.php?id_tournoi=${inscritsTournoiId}`, true);
+    xhr.open('GET', `../../actions/admin-manager/tournament/get_teams_tournament.php?id_tournoi=${registeredTournamentId}`, true);
     xhr.onload = function() {
         if (xhr.status === 200) {
             try {
                 const res = JSON.parse(xhr.responseText);
                 if (res.success) {
                     document.getElementById('equipesCount').textContent = res.count || 0;
-                    renderEquipesInscrites(res.equipes || []);
+                    renderRegisteredTeams(res.equipes || []);
                 } else {
                     showNotification(res.message || 'Erreur lors du chargement des équipes', 'error');
                 }
@@ -463,7 +460,7 @@ function loadEquipesInscrites() {
     xhr.send();
 }
 
-function renderEquipesInscrites(equipes) {
+function renderRegisteredTeams(equipes) {
     const list = document.getElementById('equipesList');
     if (!equipes.length) {
         list.innerHTML = '<div class="py-6 text-center text-gray-500">Aucune équipe inscrite</div>';
@@ -485,15 +482,15 @@ function renderEquipesInscrites(equipes) {
                 </select>
             </div>
             <div class="w-32 flex justify-end gap-2">
-                <button class="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Modifier infos" onclick="openEditEquipe(${e.id_equipe})"><i class="fas fa-pen"></i></button>
-                <button class="p-2 text-red-600 hover:bg-red-50 rounded" title="Retirer" onclick="openRemoveEquipe(${e.id_equipe}, this)"><i class="fas fa-trash"></i></button>
+                <button class="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Modifier infos" onclick="openEditTeam(${e.id_equipe})"><i class="fas fa-pen"></i></button>
+                <button class="p-2 text-red-600 hover:bg-red-50 rounded" title="Retirer" onclick="openRemoveTeam(${e.id_equipe}, this)"><i class="fas fa-trash"></i></button>
             </div>
         </div>
     `).join('');
 }
 
-// -------- Edit equipe (infos) --------
-function openEditEquipe(idEquipe) {
+// -------- Edit team  --------
+function openEditTeam(idEquipe) {
     if (!idEquipe) return;
     document.getElementById('edit_id_equipe').value = idEquipe;
     // load current values
@@ -520,7 +517,7 @@ function openEditEquipe(idEquipe) {
     xhr.send();
 }
 
-function closeEditEquipeModal() {
+function closeEditTeamModal() {
     document.getElementById('editEquipeModal').classList.add('hidden');
 }
 
@@ -544,11 +541,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     let res = null; try { res = JSON.parse(xhr.responseText); } catch(_) {}
                     if (!res || res.success) {
-                        closeEditEquipeModal();
+                        closeEditTeamModal();
                         showNotification((res && res.message) || "Équipe modifiée", 'success');
-                        loadEquipesInscrites();
-                        tournoisCache.clear();
-                        loadTournois(true);
+                        loadRegisteredTeams();
+                        tournamentsCache.clear();
+                        loadTournaments(true);
                     } else {
                         showNotification(res.message || 'Erreur de modification', 'error');
                     }
@@ -566,8 +563,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function updateEquipeStatut(idEquipe) {
-    if (!inscritsTournoiId || !idEquipe) return;
+function updateTeamStatus(idEquipe) {
+    if (!registeredTournamentId || !idEquipe) return;
     const select = document.getElementById(`statut-${idEquipe}`);
     const statut = select ? select.value : 'confirmee';
     const xhr = new XMLHttpRequest();
@@ -578,23 +575,23 @@ function updateEquipeStatut(idEquipe) {
             let res = null; try { res = JSON.parse(xhr.responseText); } catch(_) {}
             if (!res || res.success) {
                 showNotification((res && res.message) || 'Statut mis à jour', 'success');
-                loadEquipesInscrites();
+                loadRegisteredTeams();
             } else {
                 showNotification(res.message || 'Erreur', 'error');
             }
         }
     };
-    xhr.send(JSON.stringify({ id_tournoi: inscritsTournoiId, id_equipe: idEquipe, statut_participation: statut }));
+    xhr.send(JSON.stringify({ id_tournoi: registeredTournamentId, id_equipe: idEquipe, statut_participation: statut }));
 }
 
-function removeEquipe(idEquipe, btnEl, skipConfirm = false) {
-    if (!inscritsTournoiId || !idEquipe) return;
+function removeTeam(idEquipe, btnEl, skipConfirm = false) {
+    if (!registeredTournamentId || !idEquipe) return;
     // Confirmation handled by custom modal when skipConfirm is false
     if (!skipConfirm) {
-        openRemoveEquipe(idEquipe, btnEl);
+        openRemoveTeam(idEquipe, btnEl);
         return;
     }
-    closeDeleteEquipeModal();
+    closeDeleteTeamModal();
     if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '../../actions/admin-manager/tournament/remove_team_tournament.php', true);
@@ -605,9 +602,9 @@ function removeEquipe(idEquipe, btnEl, skipConfirm = false) {
             let res = null; try { res = JSON.parse(xhr.responseText); } catch(_) {}
             if (!res || res.success) {
                 showNotification((res && res.message) || 'Équipe retirée avec succès', 'success');
-                loadEquipesInscrites();
-                tournoisCache.clear();
-                loadTournois(true);
+                loadRegisteredTeams();
+                tournamentsCache.clear();
+                loadTournaments(true);
             } else {
                 showNotification(res.message || 'Erreur', 'error');
             }
@@ -617,7 +614,7 @@ function removeEquipe(idEquipe, btnEl, skipConfirm = false) {
         if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fas fa-trash"></i>'; }
         showNotification('Erreur réseau', 'error');
     };
-    xhr.send(JSON.stringify({ id_tournoi: inscritsTournoiId, id_equipe: idEquipe }));
+    xhr.send(JSON.stringify({ id_tournoi: registeredTournamentId, id_equipe: idEquipe }));
 }
 
 /**
@@ -637,15 +634,15 @@ function handleSubmit(e) {
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    const isEdit = !!currentTournoiId;
+    const isEdit = !!currentTournamentId;
     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>${isEdit ? 'Modification' : 'Création'}...`;
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
     const xhr = new XMLHttpRequest();
-    // Determine endpoint: edit if currentTournoiId exists, otherwise add
-    xhr.open('POST', currentTournoiId ? '../../actions/admin-manager/tournament/edit_tournament.php' : '../../actions/admin-manager/tournament/add_tournament.php', true);
+    // Determine endpoint: edit if currentTournamentId exists, otherwise add
+    xhr.open('POST', currentTournamentId ? '../../actions/admin-manager/tournament/edit_tournament.php' : '../../actions/admin-manager/tournament/add_tournament.php', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onload = function() {
@@ -656,7 +653,7 @@ function handleSubmit(e) {
         if (xhr.status >= 200 && xhr.status < 300) {
             let parsed = null;
             let success = true;
-            let message = currentTournoiId ? 'Tournoi modifié avec succès' : 'Tournoi créé avec succès';
+            let message = currentTournamentId ? 'Tournoi modifié avec succès' : 'Tournoi créé avec succès';
 
             const raw = (xhr.responseText || '').trim();
             const contentType = (xhr.getResponseHeader('Content-Type') || '').toLowerCase();
@@ -677,8 +674,8 @@ function handleSubmit(e) {
                 // Show success message
                 showNotification(message, 'success');
                 // Clear cache and force refresh
-                tournoisCache.clear();
-                loadTournois(true);
+                tournamentsCache.clear();
+                loadTournaments(true);
             } else {
                 showNotification((parsed && parsed.message) || 'Erreur lors de l\'enregistrement', 'error');
             }
@@ -709,7 +706,7 @@ function handleSubmit(e) {
  * @returns {void}
  */
 function openDeleteModal(id) {
-    deleteTournoiId = id;
+    deleteTournamentId = id;
     document.getElementById('deleteModal').classList.remove('hidden');
 }
 
@@ -721,7 +718,7 @@ function openDeleteModal(id) {
  * @returns {void}
  */
 function closeDeleteModal() {
-    deleteTournoiId = null;
+    deleteTournamentId = null;
     document.getElementById('deleteModal').classList.add('hidden');
 }
 
@@ -736,55 +733,73 @@ function closeDeleteModal() {
  */
 function confirmDelete() {
     // Security: Validate tournament ID before deletion
-    if (!deleteTournoiId) return;
+    if (!deleteTournamentId) return;
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '../../actions/admin-manager/tournament/delete_tournament.php', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onload = function() {
-        // Treat any 2xx as success (including 204 with empty body)
+        // Treat any 2xx as success
         if (xhr.status >= 200 && xhr.status < 300) {
-            let parsed = null;
-            let success = true;
-            let message = 'Tournoi supprimé avec succès';
-
-            const raw = (xhr.responseText || '').trim();
-            const contentType = (xhr.getResponseHeader('Content-Type') || '').toLowerCase();
-
-            if (raw && contentType.includes('application/json')) {
-                try {
+            try {
+                const raw = (xhr.responseText || '').trim();
+                let parsed = null;
+                
+                if (raw) {
                     parsed = JSON.parse(raw);
-                    if (typeof parsed.success === 'boolean') success = parsed.success;
-                    if (parsed.message) message = parsed.message;
-                } catch (_) {
-                    // Keep defaults if parsing fails
                 }
-            }
-
-            if (success) {
-                // Remove the card from DOM immediately for instant feedback
-                const card = document.getElementById(`tournoi-card-${deleteTournoiId}`);
+                
+                if (parsed && parsed.success) {
+                    // Remove the card from DOM immediately for instant feedback
+                    const card = document.getElementById(`tournoi-card-${deleteTournamentId}`);
+                    if (card && card.parentNode) {
+                        card.parentNode.removeChild(card);
+                    }
+                    // Close modal first, then show success message
+                    closeDeleteModal();
+                    showNotification(parsed.message || 'Tournoi supprimé avec succès', 'success');
+                    // Clear cache and refresh list in background to stay consistent
+                    tournamentsCache.clear();
+                    loadTournaments(true);
+                } else {
+                    showNotification((parsed && parsed.message) || 'Erreur lors de la suppression', 'error');
+                }
+            } catch (e) {
+                // If parsing fails but status is 2xx, assume success
+                const card = document.getElementById(`tournoi-card-${deleteTournamentId}`);
                 if (card && card.parentNode) {
                     card.parentNode.removeChild(card);
                 }
-                // Close modal first, then show success message
                 closeDeleteModal();
-                showNotification(message, 'success');
-                // Clear cache and refresh list in background to stay consistent
-                tournoisCache.clear();
-                loadTournois(true);
-            } else {
-                showNotification((parsed && parsed.message) || 'Erreur lors de la suppression', 'error');
+                showNotification('Tournoi supprimé avec succès', 'success');
+                tournamentsCache.clear();
+                loadTournaments(true);
             }
         } else {
-            showNotification('Erreur de connexion au serveur', 'error');
+            // Handle error responses
+            let errorMessage = 'Erreur de connexion au serveur';
+            try {
+                const raw = (xhr.responseText || '').trim();
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.message) errorMessage = parsed.message;
+                }
+            } catch (e) {
+                // Keep default error message
+            }
+            showNotification(errorMessage, 'error');
         }
+    };
+
+    // Error Management: Handle network errors
+    xhr.onerror = function() {
+        showNotification('Erreur réseau', 'error');
     };
 
     // Security: Send tournament ID as JSON
     xhr.send(JSON.stringify({
-        id_tournoi: deleteTournoiId
+        id_tournoi: deleteTournamentId
     }));
 }
 
@@ -798,7 +813,7 @@ function confirmDelete() {
 function closeModal() {
     document.getElementById('tournoiModal').classList.add('hidden');
     document.getElementById('tournoiForm').reset();
-    currentTournoiId = null;
+    currentTournamentId = null;
 }
 
 /**
@@ -876,7 +891,7 @@ function showNotification(message, type = 'info') {
  * @param {string} statut - Tournament status (planifie, en_cours, termine, annule)
  * @returns {string} CSS classes for status badge
  */
-function getStatutClass(statut) {
+function getStatusClass(statut) {
     const classes = {
         'planifie': 'bg-blue-100 text-blue-800',
         'en_cours': 'bg-green-100 text-green-800',
@@ -895,7 +910,7 @@ function getStatutClass(statut) {
  * @param {string} statut - Tournament status code
  * @returns {string} French label for status
  */
-function getStatutLabel(statut) {
+function getStatusLabel(statut) {
     const labels = {
         'planifie': 'Planifié',
         'en_cours': 'En cours',

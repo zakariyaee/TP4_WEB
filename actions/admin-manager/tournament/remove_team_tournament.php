@@ -7,6 +7,7 @@ checkAdminOrRespo();
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
@@ -17,12 +18,13 @@ $id_tournoi = intval($data['id_tournoi'] ?? 0);
 $id_equipe = intval($data['id_equipe'] ?? 0);
 
 if ($id_tournoi <= 0 || $id_equipe <= 0) {
-    echo json_encode(['success' => false, 'message' => 'ID du tournoi et de l\'équipe requis']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => "L'identifiant du tournoi et celui de l'équipe sont requis"]);
     exit;
 }
 
 try {
-    // Vérifier les permissions sur le tournoi
+    // Check permissions on tournament
     $stmt = $pdo->prepare("
         SELECT t.*, tr.id_responsable 
         FROM tournoi t
@@ -33,26 +35,29 @@ try {
     $tournoi = $stmt->fetch();
     
     if (!$tournoi) {
+        http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Tournoi introuvable']);
         exit;
     }
     
     if ($_SESSION['user_role'] === 'responsable') {
         if ($tournoi['id_terrain'] && $tournoi['id_responsable'] && $tournoi['id_responsable'] !== $_SESSION['user_email']) {
-            echo json_encode(['success' => false, 'message' => 'Vous n\'avez pas permission de gérer ce tournoi']);
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Permission refusée']);
             exit;
         }
     }
     
-    // Vérifier que l'équipe est inscrite (la table n'a pas de colonne id)
+    // Ensure team is registered (table may not have an auto id)
     $stmt = $pdo->prepare("SELECT 1 FROM tournoi_equipe WHERE id_tournoi = ? AND id_equipe = ? LIMIT 1");
     $stmt->execute([$id_tournoi, $id_equipe]);
     if (!$stmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'Cette équipe n\'est pas inscrite à ce tournoi']);
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => "Cette équipe n'est pas inscrite à ce tournoi"]);
         exit;
     }
     
-    // Supprimer d'abord les matchs liés (si la table existe et des FK empêchent la suppression)
+    // Delete related matches first (if table exists)
     try {
         $stmt = $pdo->prepare("DELETE FROM match_tournoi WHERE id_tournoi = ? AND (id_equipe1 = ? OR id_equipe2 = ?)");
         $stmt->execute([$id_tournoi, $id_equipe, $id_equipe]);
@@ -66,13 +71,15 @@ try {
     $stmt->execute([$id_tournoi, $id_equipe]);
     
     $pdo->commit();
-    echo json_encode(['success' => true, 'message' => 'Équipe retirée avec succès']);
+    http_response_code(200);
+    echo json_encode(['success' => true, 'message' => "Équipe retirée avec succès"]);
     
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("Erreur remove_equipe_tournoi: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Erreur lors du retrait de l\'équipe']);
+    error_log("Erreur remove_team_tournament: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => "Erreur lors du retrait de l'équipe du tournoi"]);
 }
 ?>

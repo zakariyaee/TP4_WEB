@@ -19,7 +19,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
@@ -39,7 +39,7 @@ $prixInscription = isset($data['prix_inscription']) ? floatval($data['prix_inscr
 
 if ($idTournoi <= 0) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid tournament ID']);
+    echo json_encode(['success' => false, 'message' => 'ID de tournoi invalide']);
     exit;
 }
 
@@ -51,19 +51,19 @@ if (empty($typeTournoi)) {
 // Validation
 if (empty($nomTournoi) || empty($dateDebut) || empty($dateFin) || $nbEquipes < 2) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
+    echo json_encode(['success' => false, 'message' => 'Tous les champs requis doivent être remplis']);
     exit;
 }
 
 if (!in_array($statut, ['planifie', 'en_cours', 'termine', 'annule'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
+    echo json_encode(['success' => false, 'message' => 'Statut invalide']);
     exit;
 }
 
 if (strtotime($dateDebut) >= strtotime($dateFin)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'End date must be after start date']);
+    echo json_encode(['success' => false, 'message' => 'La date de fin doit être après la date de début']);
     exit;
 }
 
@@ -80,14 +80,14 @@ try {
     
     if (!$tournoi) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Tournament not found']);
+        echo json_encode(['success' => false, 'message' => 'Tournoi introuvable']);
         exit;
     }
     
     if ($_SESSION['user_role'] === 'responsable') {
         if ($tournoi['id_terrain'] && $tournoi['id_responsable'] !== $_SESSION['user_email']) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'You do not have permission to edit this tournament']);
+            echo json_encode(['success' => false, 'message' => "Vous n'avez pas la permission de modifier ce tournoi"]);
             exit;
         }
     }
@@ -100,13 +100,13 @@ try {
         
         if (!$terrain) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Terrain not found']);
+            echo json_encode(['success' => false, 'message' => 'Terrain introuvable']);
             exit;
         }
         
         if ($_SESSION['user_role'] === 'responsable' && $terrain['id_responsable'] !== $_SESSION['user_email']) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'You do not have permission to use this terrain']);
+            echo json_encode(['success' => false, 'message' => "Vous n'avez pas la permission d'utiliser ce terrain"]);
             exit;
         }
     }
@@ -151,7 +151,7 @@ try {
     
     $pdo->commit();
     http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'Tournament updated successfully']);
+    echo json_encode(['success' => true, 'message' => 'Tournoi mis à jour avec succès']);
     
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
@@ -159,13 +159,13 @@ try {
     }
     error_log("Error edit_tournoi: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating tournament']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour du tournoi']);
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
     error_log("Unexpected error edit_tournoi: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating tournament']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour du tournoi']);
 }
 ?>

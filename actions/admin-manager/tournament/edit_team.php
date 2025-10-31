@@ -7,6 +7,7 @@ checkAdminOrRespo();
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
@@ -17,34 +18,39 @@ $nom = trim($data['nom_equipe'] ?? '');
 $email = trim($data['email_equipe'] ?? '');
 
 if ($id <= 0 || $nom === '' || $email === '') {
+    http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Champs requis manquants']);
     exit;
 }
 
 try {
-    // Vérifier que l'équipe existe
+    // Ensure team exists
     $stmt = $pdo->prepare('SELECT id_equipe FROM equipe WHERE id_equipe = ?');
     $stmt->execute([$id]);
     if (!$stmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => "Équipe introuvable"]);
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Équipe introuvable']);
         exit;
     }
 
-    // S'assurer d'unicité email si vous le souhaitez (facultatif)
+    // Uniqueness of email (optional)
     $stmt = $pdo->prepare('SELECT id_equipe FROM equipe WHERE email_equipe = ? AND id_equipe <> ?');
     $stmt->execute([$email, $id]);
     if ($stmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'Cet email est déjà utilisé par une autre équipe']);
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => "Cet email est déjà utilisé par une autre équipe"]);
         exit;
     }
 
     $stmt = $pdo->prepare('UPDATE equipe SET nom_equipe = ?, email_equipe = ? WHERE id_equipe = ?');
     $stmt->execute([$nom, $email, $id]);
 
-    echo json_encode(['success' => true, 'message' => "Équipe mise à jour"]);
+    http_response_code(200);
+    echo json_encode(['success' => true, 'message' => 'Équipe mise à jour']);
 } catch (PDOException $e) {
-    error_log('Erreur edit_equipe: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Erreur lors de la mise à jour de l\'équipe']);
+    error_log('Erreur edit_team: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de la mise à jour de l'équipe"]);
 }
 ?>
 

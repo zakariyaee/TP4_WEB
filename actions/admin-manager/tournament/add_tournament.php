@@ -19,7 +19,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
@@ -39,7 +39,7 @@ $regles = trim($data['regles'] ?? '');
 // Validation
 if (empty($nomTournoi) || empty($dateDebut) || empty($dateFin) || $nbEquipes < 2) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
+    echo json_encode(['success' => false, 'message' => 'Tous les champs requis doivent être remplis']);
     exit;
 }
 
@@ -50,13 +50,13 @@ if ($typeTournoi === '') {
 
 if (!in_array($statut, ['planifie', 'en_cours', 'termine', 'annule'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
+    echo json_encode(['success' => false, 'message' => 'Statut invalide']);
     exit;
 }
 
 if (strtotime($dateDebut) >= strtotime($dateFin)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'End date must be after start date']);
+    echo json_encode(['success' => false, 'message' => 'La date de fin doit être après la date de début']);
     exit;
 }
 
@@ -68,13 +68,13 @@ if ($idTerrain) {
     
     if (!$terrain) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Terrain not found']);
+        echo json_encode(['success' => false, 'message' => 'Terrain introuvable']);
         exit;
     }
     
     if ($_SESSION['user_role'] === 'responsable' && $terrain['id_responsable'] !== $_SESSION['user_email']) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'message' => 'You do not have permission to use this terrain']);
+        echo json_encode(['success' => false, 'message' => "Vous n'avez pas la permission d'utiliser ce terrain"]);
         exit;
     }
 }
@@ -122,7 +122,7 @@ try {
 
     $pdo->commit();
     http_response_code(201);
-    echo json_encode(['success' => true, 'message' => 'Tournament created successfully']);
+    echo json_encode(['success' => true, 'message' => 'Tournoi créé avec succès']);
     
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
@@ -132,7 +132,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error creating tournament'
+        'message' => 'Erreur lors de la création du tournoi'
     ]);
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {
@@ -142,7 +142,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error creating tournament'
+        'message' => 'Erreur lors de la création du tournoi'
     ]);
 }
 ?>

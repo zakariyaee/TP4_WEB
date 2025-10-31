@@ -75,10 +75,10 @@ try {
 } catch (PDOException $e) {
     error_log("Error get_tournois: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving tournaments']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des tournois']);
 } catch (Exception $e) {
     error_log("Unexpected error get_tournois: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving tournaments']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des tournois']);
 }
 ?>

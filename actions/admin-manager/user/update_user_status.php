@@ -18,7 +18,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
@@ -29,19 +29,19 @@ $newStatus = trim($data['statut_compte'] ?? '');
 
 if (empty($email) || empty($newStatus)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+    echo json_encode(['success' => false, 'message' => 'Champs requis manquants']);
     exit;
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid email']);
+    echo json_encode(['success' => false, 'message' => 'Email invalide']);
     exit;
 }
 
 if (!in_array($newStatus, ['actif', 'suspendu'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
+    echo json_encode(['success' => false, 'message' => 'Statut invalide']);
     exit;
 }
 
@@ -51,7 +51,7 @@ try {
     $stmt->execute([$email]);
     if (!$stmt->fetch()) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'User not found']);
+        echo json_encode(['success' => false, 'message' => 'Utilisateur introuvable']);
         exit;
     }
 
@@ -60,14 +60,14 @@ try {
     $stmt->execute([$newStatus, $email]);
 
     http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'User status updated successfully']);
+    echo json_encode(['success' => true, 'message' => "Statut de l'utilisateur mis à jour avec succès"]);
 } catch (PDOException $e) {
-    error_log('Error update_user_status: ' . $e->getMessage());
+    error_log('Erreur update_user_status: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating user status']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de la mise à jour du statut de l'utilisateur"]);
 } catch (Exception $e) {
-    error_log('Unexpected error update_user_status: ' . $e->getMessage());
+    error_log('Erreur inattendue update_user_status: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating user status']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de la mise à jour du statut de l'utilisateur"]);
 }
 ?>

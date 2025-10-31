@@ -19,7 +19,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
@@ -34,25 +34,25 @@ $userPassword = $data['password'] ?? '';
 
 if (empty($nom) || empty($prenom) || empty($userEmail) || empty($userRole) || empty($userPassword)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
+    echo json_encode(['success' => false, 'message' => 'Tous les champs requis doivent être remplis']);
     exit;
 }
 
 if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid email']);
+    echo json_encode(['success' => false, 'message' => 'Email invalide']);
     exit;
 }
 
 if (!in_array($userRole, ['admin','responsable','joueur'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid role']);
+    echo json_encode(['success' => false, 'message' => 'Rôle invalide']);
     exit;
 }
 
 if (strlen($userPassword) < 6) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Password too short']);
+    echo json_encode(['success' => false, 'message' => 'Mot de passe trop court']);
     exit;
 }
 
@@ -62,7 +62,7 @@ try {
     $stmt->execute([$userEmail]);
     if ($stmt->fetch()) {
         http_response_code(409);
-        echo json_encode(['success' => false, 'message' => 'Email already in use']);
+        echo json_encode(['success' => false, 'message' => 'Email déjà utilisé']);
         exit;
     }
 
@@ -84,16 +84,16 @@ try {
 
     $pdo->commit();
     http_response_code(201);
-    echo json_encode(['success' => true, 'message' => 'User added successfully']);
+    echo json_encode(['success' => true, 'message' => 'Utilisateur ajouté avec succès']);
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
-    error_log('Error add_user: ' . $e->getMessage());
+    error_log('Erreur add_user: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error adding user']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de l'ajout de l'utilisateur"]);
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
-    error_log('Unexpected error add_user: ' . $e->getMessage());
+    error_log('Erreur inattendue add_user: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error adding user']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de l'ajout de l'utilisateur"]);
 }
 ?>

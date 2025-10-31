@@ -83,13 +83,13 @@ try {
         ]
     ]);
 } catch (PDOException $e) {
-    error_log('Error get_users: ' . $e->getMessage());
+    error_log('Erreur get_users: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving users']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des utilisateurs']);
 } catch (Exception $e) {
-    error_log('Unexpected error get_users: ' . $e->getMessage());
+    error_log('Erreur inattendue get_users: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving users']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des utilisateurs']);
 }
 ?>
 

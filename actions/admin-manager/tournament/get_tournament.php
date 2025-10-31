@@ -19,7 +19,7 @@ header('Content-Type: application/json');
 $tournamentId = $_GET['id'] ?? '';
 if (empty($tournamentId)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Tournament ID required']);
+    echo json_encode(['success' => false, 'message' => 'ID de tournoi requis']);
     exit;
 }
 
@@ -70,7 +70,7 @@ try {
     
     if (!$tournoi) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Tournament not found']);
+        echo json_encode(['success' => false, 'message' => 'Tournoi introuvable']);
         exit;
     }
     
@@ -80,10 +80,10 @@ try {
 } catch (PDOException $e) {
     error_log("Error get_tournoi: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving tournament']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération du tournoi']);
 } catch (Exception $e) {
     error_log("Unexpected error get_tournoi: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error retrieving tournament']);
+    echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération du tournoi']);
 }
 ?>

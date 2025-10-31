@@ -2,7 +2,7 @@ let currentEmail = null;
 let deleteEmail = null;
 let currentPage = 1;
 let itemsPerPage = 10;
-let usersCache = new Map(); // Cache pour les utilisateurs
+let usersCache = new Map(); // Users cache
 let lastLoadTime = 0;
 let isLoading = false;
 
@@ -15,6 +15,23 @@ document.addEventListener('DOMContentLoaded', function() {
         usersCache.clear();
     }, 300000);
 });
+
+// ===== English aliases (non-breaking) to follow naming convention =====
+// Read operations
+window.loadUsersList = function(page = currentPage, forceRefresh = false) { return loadUsers(page, forceRefresh); };
+window.renderUsers = function(users) { return displayUsers(users); };
+window.renderUsersPagination = function(pagination) { return displayPagination(pagination); };
+
+// CRUD / modal actions
+window.openAddUserModal = function() { return openAddModal(); };
+window.editUserByEmail = function(email) { return editUser(email); };
+window.openUserDeleteModal = function(email) { return openDeleteModal(email); };
+window.closeUserDeleteModal = function() { return closeDeleteModal(); };
+window.confirmUserDelete = function() { return confirmDelete(); };
+window.closeUserModal = function() { return closeModal(); };
+
+// Status
+window.toggleAccountStatus = function(email, isActive) { return toggleUserStatus(email, isActive); };
 
 /**
  * Setup event listeners for search, filters and form

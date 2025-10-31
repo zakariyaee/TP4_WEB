@@ -127,14 +127,7 @@ $pageTitle = "Gestion des Tournois";
         <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col">
             <div class="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-8 py-6 flex justify-between items-center shadow-lg">
                 <h2 class="text-2xl font-bold">Inscrits du tournoi</h2>
-                <button onclick="closeInscritsModal()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200">×</button>
-            </div>
-
-            <div class="px-8 pt-4">
-                <div class="flex gap-2">
-
-                <div class="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-100 text-emerald-700">Équipes</div>
-                </div>
+                <button onclick="closeRegisteredTeamsModal()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200">×</button>
             </div>
 
             <div class="p-8 overflow-y-auto flex-1">
@@ -151,8 +144,6 @@ $pageTitle = "Gestion des Tournois";
                     </div>
                     <div id="equipesList" class="divide-y divide-gray-100"></div>
                 </div>
-
-                <!-- Matchs content removed -->
             </div>
         </div>
     </div>
@@ -162,7 +153,7 @@ $pageTitle = "Gestion des Tournois";
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
             <div class="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-6 py-4 flex justify-between items-center">
                 <h3 class="text-xl font-bold">Modifier l'équipe</h3>
-                <button onclick="closeEditEquipeModal()" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-1.5 rounded-lg">×</button>
+                <button onclick="closeEditTeamModal()" class="text-white/80 hover:text-white hover:bg-white/20 px-3 py-1.5 rounded-lg">×</button>
             </div>
             <form id="editEquipeForm" class="p-6 space-y-4">
                 <input type="hidden" id="edit_id_equipe">
@@ -176,7 +167,7 @@ $pageTitle = "Gestion des Tournois";
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="submit" id="editEquipeSubmit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold">Modifier</button>
-                    <button type="button" onclick="closeEditEquipeModal()" class="px-4 py-2 border-2 border-gray-300 rounded-lg">Annuler</button>
+                    <button type="button" onclick="closeEditTeamModal()" class="px-4 py-2 border-2 border-gray-300 rounded-lg">Annuler</button>
                 </div>
             </form>
         </div>
@@ -189,10 +180,10 @@ $pageTitle = "Gestion des Tournois";
                 <h3 class="text-2xl font-bold text-gray-900 mb-3">Confirmer la suppression</h3>
                 <p class="text-gray-600 mb-8 leading-relaxed">Êtes-vous sûr de vouloir retirer cette équipe du tournoi ? Cette action est irréversible et ne peut pas être annulée.</p>
                 <div class="flex gap-4">
-                    <button onclick="confirmRemoveEquipe()" id="confirmRemoveEquipeBtn" class="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <button onclick="confirmRemoveTeam()" id="confirmRemoveEquipeBtn" class="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
                         Supprimer
                     </button>
-                    <button onclick="closeDeleteEquipeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-semibold transition-all duration-200">
+                    <button onclick="closeDeleteTeamModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-semibold transition-all duration-200">
                         Annuler
                     </button>
                 </div>

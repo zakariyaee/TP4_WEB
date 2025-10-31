@@ -19,7 +19,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit;
 }
 
@@ -34,20 +34,20 @@ $userPassword = $data['password'] ?? '';
 
 if (empty($originalEmail) || empty($nom) || empty($prenom) || empty($userRole)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+    echo json_encode(['success' => false, 'message' => 'Champs requis manquants']);
     exit;
 }
 
 // Validate email format (even if it doesn't change)
 if (!filter_var($originalEmail, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid email']);
+    echo json_encode(['success' => false, 'message' => 'Email invalide']);
     exit;
 }
 
 if (!in_array($userRole, ['admin','responsable','joueur'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid role']);
+    echo json_encode(['success' => false, 'message' => 'Rôle invalide']);
     exit;
 }
 
@@ -72,7 +72,7 @@ try {
         if (strlen($userPassword) < 6) {
             $pdo->rollBack();
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Password too short']);
+            echo json_encode(['success' => false, 'message' => 'Mot de passe trop court']);
             exit;
         }
         $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
@@ -111,16 +111,16 @@ try {
 
     $pdo->commit();
     http_response_code(200);
-    echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+    echo json_encode(['success' => true, 'message' => 'Utilisateur mis à jour avec succès']);
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
-    error_log('Error edit_user: ' . $e->getMessage());
+    error_log('Erreur edit_user: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating user']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de la mise à jour de l'utilisateur"]);
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
-    error_log('Unexpected error edit_user: ' . $e->getMessage());
+    error_log('Erreur inattendue edit_user: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error updating user']);
+    echo json_encode(['success' => false, 'message' => "Erreur lors de la mise à jour de l'utilisateur"]);
 }
 ?>
