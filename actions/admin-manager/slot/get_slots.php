@@ -1,7 +1,10 @@
 <?php
-// actions/admin-respo/get_creneaux.php
+// actions/admin-manager/slot/get_slots.php
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
+
+checkAdminOrRespo();
+
 header('Content-Type: application/json');
 
 try {
@@ -24,6 +27,7 @@ try {
             t.categorie,
             t.type,
             t.taille,
+            t.id_responsable,
             r.id_reservation,
             r.date_reservation,
             r.statut as reservation_statut,
@@ -47,14 +51,20 @@ try {
 
     $params = [];
 
+    // Si c'est un responsable, ne montrer que les créneaux de ses terrains
+    if ($_SESSION['user_role'] === 'responsable') {
+        $query .= " AND t.id_responsable = :user_email";
+        $params[':user_email'] = $_SESSION['user_email'];
+    }
+
     if (!empty($terrain)) {
-        $query .= " AND c.id_terrain = ?";
-        $params[] = $terrain;
+        $query .= " AND c.id_terrain = :terrain";
+        $params[':terrain'] = $terrain;
     }
 
     if (!empty($jour)) {
-        $query .= " AND c.jour_semaine = ?";
-        $params[] = $jour;
+        $query .= " AND c.jour_semaine = :jour";
+        $params[':jour'] = $jour;
     }
 
     if ($disponibilite !== '') {
@@ -126,7 +136,8 @@ try {
             'terrain' => $terrain,
             'jour' => $jour,
             'disponibilite' => $disponibilite
-        ]
+        ],
+        'user_role' => $_SESSION['user_role']
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

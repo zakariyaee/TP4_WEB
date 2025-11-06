@@ -8,6 +8,26 @@ const previewContainer = document.getElementById("previewContainer");
 const previewImage = document.getElementById("previewImage");
 const imageInput = document.getElementById("image");
 
+// Écouter les changements dans d'autres onglets
+window.addEventListener("storage", function (e) {
+  if (e.key === "terrains_updated") {
+    // Un autre onglet a modifié les terrains
+    console.log("Mise à jour détectée depuis un autre onglet");
+    loadTerrains();
+
+    // Afficher une notification discrète
+    showNotification("Les données ont été mises à jour", "success");
+
+    // Nettoyer le flag après utilisation
+    localStorage.removeItem("terrains_updated");
+  }
+});
+
+// Notifier les autres onglets après chaque modification
+function notifyOtherTabs() {
+  localStorage.setItem("terrains_updated", Date.now().toString());
+}
+
 // Clic sur la zone de dépôt
 dropZone.addEventListener("click", () => imageFile.click());
 
@@ -413,6 +433,7 @@ function handleSubmit(e) {
           showNotification(response.message, "success");
           closeModal();
           loadTerrains();
+          notifyOtherTabs(); // ← AJOUTEZ CETTE LIGNE
         } else {
           showNotification(
             response.message || "Erreur lors de l'enregistrement",
@@ -465,6 +486,7 @@ function confirmDelete() {
           showNotification(response.message, "success");
           closeDeleteModal();
           loadTerrains();
+          notifyOtherTabs(); // ← AJOUTEZ CETTE LIGNE
         } else {
           showNotification(
             response.message || "Erreur lors de la suppression",
