@@ -1,95 +1,115 @@
 let currentCreneauId = null;
-        let deleteCreneauId = null;
+let deleteCreneauId = null;
+let userRole = null;
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            loadTerrains();
-            loadCreneaux();
-            setupEventListeners();
-        });
+// Écouter les changements dans d'autres onglets
+window.addEventListener("storage", function (e) {
+  if (e.key === "slots_updated") {
+    // Un autre onglet a modifié les terrains
+    console.log("Mise à jour des créneaux détectée depuis un autre onglet");
+    loadCreneaux();
 
-        // Configuration des écouteurs d'événements
-        function setupEventListeners() {
-            document.getElementById('filterTerrain').addEventListener('change', loadCreneaux);
-            document.getElementById('filterJour').addEventListener('change', loadCreneaux);
-            document.getElementById('filterDisponibilite').addEventListener('change', loadCreneaux);
-            document.getElementById('creneauForm').addEventListener('submit', handleSubmit);
-        }
+    // Afficher une notification discrète
+    showNotification("Les créneaux ont été mis à jour", "success");
 
-        // Charger les terrains
-        function loadTerrains() {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
+    // Nettoyer le flag après utilisation
+    localStorage.removeItem("slots_updated");
+  }
+});
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            populateTerrainSelects(response.terrains);
-                        }
-                    } catch (e) {
-                        console.error('Erreur lors du chargement des terrains');
-                    }
+// Notifier les autres onglets après chaque modification
+function notifyOtherTabs() {
+  localStorage.setItem("slots_updated", Date.now().toString());
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    loadTerrains();
+    loadCreneaux();
+    setupEventListeners();
+});
+
+// Configuration des écouteurs d'événements
+function setupEventListeners() {
+    document.getElementById('filterTerrain').addEventListener('change', loadCreneaux);
+    document.getElementById('filterJour').addEventListener('change', loadCreneaux);
+    document.getElementById('filterDisponibilite').addEventListener('change', loadCreneaux);
+    document.getElementById('creneauForm').addEventListener('submit', handleSubmit);
+}
+
+// Charger les terrains
+function loadTerrains() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    populateTerrainSelects(response.terrains);
                 }
-            };
-
-            xhr.send();
+            } catch (e) {
+                console.error('Erreur lors du chargement des terrains');
+            }
         }
+    };
 
-        // Remplir les sélecteurs de terrain
-        function populateTerrainSelects(terrains) {
-            const modalSelect = document.getElementById('id_terrain');
-            const filterSelect = document.getElementById('filterTerrain');
+    xhr.send();
+}
 
-            modalSelect.innerHTML = '<option value="">Sélectionner un terrain...</option>' +
-                terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te} - ${t.categorie}</option>`).join('');
+// Remplir les sélecteurs de terrain
+function populateTerrainSelects(terrains) {
+    const modalSelect = document.getElementById('id_terrain');
+    const filterSelect = document.getElementById('filterTerrain');
 
-            filterSelect.innerHTML = '<option value="">Tous les terrains</option>' +
-                terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te}</option>`).join('');
-        }
+    modalSelect.innerHTML = '<option value="">Sélectionner un terrain...</option>' +
+        terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te} - ${t.categorie}</option>`).join('');
 
-        // Charger les créneaux
-        function loadCreneaux() {
-            const terrain = document.getElementById('filterTerrain').value;
-            const jour = document.getElementById('filterJour').value;
-            const disponibilite = document.getElementById('filterDisponibilite').value;
+    filterSelect.innerHTML = '<option value="">Tous les terrains</option>' +
+        terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te}</option>`).join('');
+}
 
-            showLoader();
+// Charger les créneaux
+function loadCreneaux() {
+    const terrain = document.getElementById('filterTerrain').value;
+    const jour = document.getElementById('filterJour').value;
+    const disponibilite = document.getElementById('filterDisponibilite').value;
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../../actions/admin-manager/slot/get_slots.php?terrain=${terrain}&jour=${encodeURIComponent(jour)}&disponibilite=${disponibilite}`, true);
+    showLoader();
 
-            xhr.onload = function() {
-                hideLoader();
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `../../actions/admin-manager/slot/get_slots.php?terrain=${terrain}&jour=${encodeURIComponent(jour)}&disponibilite=${disponibilite}`, true);
 
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            displayCreneaux(response.creneaux);
-                        } else {
-                            showNotification(response.message || 'Erreur lors du chargement des créneaux', 'error');
-                        }
-                    } catch (e) {
-                        showNotification('Erreur lors du traitement de la réponse', 'error');
-                    }
+    xhr.onload = function() {
+        hideLoader();
+
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    userRole = response.user_role; // Stocker le rôle de l'utilisateur
+                    displayCreneaux(response.creneaux);
                 } else {
-                    showNotification('Erreur de connexion au serveur', 'error');
+                    showNotification(response.message || 'Erreur lors du chargement des créneaux', 'error');
                 }
-            };
-
-            xhr.onerror = function() {
-                hideLoader();
-                showNotification('Erreur réseau', 'error');
-            };
-
-            xhr.send();
+            } catch (e) {
+                showNotification('Erreur lors du traitement de la réponse', 'error');
+            }
+        } else {
+            showNotification('Erreur de connexion au serveur', 'error');
         }
+    };
 
-        // Afficher les créneaux groupés par terrain
-        // Remplacer la fonction displayCreneaux dans votre code par celle-ci :
+    xhr.onerror = function() {
+        hideLoader();
+        showNotification('Erreur réseau', 'error');
+    };
 
+    xhr.send();
+}
+
+// Afficher les créneaux groupés par terrain
 function displayCreneaux(creneaux) {
     const container = document.getElementById('creneauxContainer');
 
@@ -146,6 +166,11 @@ function displayCreneaux(creneaux) {
                 <div class="terrain-header">
                     <div class="flex-1">
                         <h2>${terrain.nom}</h2>
+                        <div class="text-sm opacity-90 mt-1">
+                            <i class="fas fa-map-marker-alt mr-1"></i>${terrain.info.localisation}
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-user-tie mr-1"></i>${terrain.info.responsable}
+                        </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
@@ -233,7 +258,7 @@ function displayCreneaux(creneaux) {
                     ${jours.map(jour => {
                         const creneauxSoir = (jourGroups[jour] || []).filter(c => {
                             const heure = parseInt(c.heure_debut.split(':')[0]);
-                            return heure >= 18 || heure === 0; // Inclut minuit (00:00)
+                            return heure >= 18 || heure === 0;
                         });
                         return renderCreneauxCell(creneauxSoir);
                     }).join('')}
@@ -282,180 +307,182 @@ function renderCreneauxCell(creneaux) {
     `;
 }
 
-        // Ouvrir le modal d'ajout
-        function openAddModal() {
-            currentCreneauId = null;
-            document.getElementById('modalTitle').textContent = 'Ajouter un créneau';
-            document.getElementById('creneauForm').reset();
-            document.getElementById('creneauId').value = '';
-            document.getElementById('creneauModal').classList.remove('hidden');
-        }
+// Ouvrir le modal d'ajout
+function openAddModal() {
+    currentCreneauId = null;
+    document.getElementById('modalTitle').textContent = 'Ajouter un créneau';
+    document.getElementById('creneauForm').reset();
+    document.getElementById('creneauId').value = '';
+    document.getElementById('creneauModal').classList.remove('hidden');
+}
 
-        // Modifier un créneau
-        function editCreneau(id) {
-            currentCreneauId = id;
+// Modifier un créneau
+function editCreneau(id) {
+    currentCreneauId = id;
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../../actions/admin-manager/slot/get_slot.php?id=${id}`, true);
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `../../actions/admin-manager/slot/get_slot.php?id=${id}`, true);
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            const creneau = response.creneau;
-                            document.getElementById('modalTitle').textContent = 'Modifier le créneau';
-                            document.getElementById('creneauId').value = creneau.id_creneaux;
-                            document.getElementById('id_terrain').value = creneau.id_terrain;
-                            document.getElementById('jour_semaine').value = creneau.jour_semaine;
-                            document.getElementById('heure_debut').value = creneau.heure_debut;
-                            document.getElementById('heure_fin').value = creneau.heure_fin;
-                            document.getElementById('creneauModal').classList.remove('hidden');
-                        } else {
-                            showNotification(response.message || 'Erreur lors du chargement du créneau', 'error');
-                        }
-                    } catch (e) {
-                        showNotification('Erreur lors du traitement de la réponse', 'error');
-                    }
-                }
-            };
-
-            xhr.send();
-        }
-
-        // Gérer la soumission du formulaire
-        function handleSubmit(e) {
-            e.preventDefault();
-
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
-
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', currentCreneauId ? '../../actions/admin-manager/slot/edit_slot.php' : '../../actions/admin-manager/slot/add_slot.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-
-            xhr.onload = function() {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Enregistrer';
-
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            showNotification(response.message, 'success');
-                            closeModal();
-                            loadCreneaux();
-                        } else {
-                            showNotification(response.message || 'Erreur lors de l\'enregistrement', 'error');
-                        }
-                    } catch (e) {
-                        showNotification('Erreur lors du traitement de la réponse', 'error');
-                    }
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    const creneau = response.creneau;
+                    document.getElementById('modalTitle').textContent = 'Modifier le créneau';
+                    document.getElementById('creneauId').value = creneau.id_creneaux;
+                    document.getElementById('id_terrain').value = creneau.id_terrain;
+                    document.getElementById('jour_semaine').value = creneau.jour_semaine;
+                    document.getElementById('heure_debut').value = creneau.heure_debut;
+                    document.getElementById('heure_fin').value = creneau.heure_fin;
+                    document.getElementById('creneauModal').classList.remove('hidden');
                 } else {
-                    showNotification('Erreur de connexion au serveur', 'error');
+                    showNotification(response.message || 'Erreur lors du chargement du créneau', 'error');
                 }
-            };
-
-            xhr.onerror = function() {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Enregistrer';
-                showNotification('Erreur réseau', 'error');
-            };
-
-            xhr.send(JSON.stringify(data));
+            } catch (e) {
+                showNotification('Erreur lors du traitement de la réponse', 'error');
+            }
         }
+    };
 
-        // Ouvrir le modal de suppression
-        function openDeleteModal(id) {
-            deleteCreneauId = id;
-            document.getElementById('deleteModal').classList.remove('hidden');
-        }
+    xhr.send();
+}
 
-        // Fermer le modal de suppression
-        function closeDeleteModal() {
-            deleteCreneauId = null;
-            document.getElementById('deleteModal').classList.add('hidden');
-        }
+// Gérer la soumission du formulaire
+function handleSubmit(e) {
+    e.preventDefault();
 
-        // Confirmer la suppression
-        function confirmDelete() {
-            if (!deleteCreneauId) return;
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '../../actions/admin-manager/slot/delete_slot.php', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.success) {
-                            showNotification(response.message, 'success');
-                            closeDeleteModal();
-                            loadCreneaux();
-                        } else {
-                            showNotification(response.message || 'Erreur lors de la suppression', 'error');
-                        }
-                    } catch (e) {
-                        showNotification('Erreur lors du traitement de la réponse', 'error');
-                    }
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', currentCreneauId ? '../../actions/admin-manager/slot/edit_slot.php' : '../../actions/admin-manager/slot/add_slot.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onload = function() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save mr-1"></i>Enregistrer';
+
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    closeModal();
+                    loadCreneaux();
+                    notifyOtherTabs();
+                } else {
+                    showNotification(response.message || 'Erreur lors de l\'enregistrement', 'error');
                 }
-            };
-
-            xhr.send(JSON.stringify({
-                id_creneaux: deleteCreneauId
-            }));
+            } catch (e) {
+                showNotification('Erreur lors du traitement de la réponse', 'error');
+            }
+        } else {
+            showNotification('Erreur de connexion au serveur', 'error');
         }
+    };
 
-        // Fermer le modal principal
-        function closeModal() {
-            document.getElementById('creneauModal').classList.add('hidden');
-            document.getElementById('creneauForm').reset();
-            currentCreneauId = null;
+    xhr.onerror = function() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save mr-1"></i>Enregistrer';
+        showNotification('Erreur réseau', 'error');
+    };
+
+    xhr.send(JSON.stringify(data));
+}
+
+// Ouvrir le modal de suppression
+function openDeleteModal(id) {
+    deleteCreneauId = id;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+// Fermer le modal de suppression
+function closeDeleteModal() {
+    deleteCreneauId = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+// Confirmer la suppression
+function confirmDelete() {
+    if (!deleteCreneauId) return;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '../../actions/admin-manager/slot/delete_slot.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    closeDeleteModal();
+                    loadCreneaux();
+                    notifyOtherTabs();
+                } else {
+                    showNotification(response.message || 'Erreur lors de la suppression', 'error');
+                }
+            } catch (e) {
+                showNotification('Erreur lors du traitement de la réponse', 'error');
+            }
         }
+    };
 
-        // Afficher/masquer le loader
-        function showLoader() {
-            document.getElementById('loader').classList.remove('hidden');
-        }
+    xhr.send(JSON.stringify({
+        id_creneaux: deleteCreneauId
+    }));
+}
 
-        function hideLoader() {
-            document.getElementById('loader').classList.add('hidden');
-        }
+// Fermer le modal principal
+function closeModal() {
+    document.getElementById('creneauModal').classList.add('hidden');
+    document.getElementById('creneauForm').reset();
+    currentCreneauId = null;
+}
 
-        // Afficher une notification
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
+// Afficher/masquer le loader
+function showLoader() {
+    document.getElementById('loader').classList.remove('hidden');
+}
 
-            const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-green-500',
-                warning: 'bg-yellow-500'
-            };
+function hideLoader() {
+    document.getElementById('loader').classList.add('hidden');
+}
 
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle',
-                warning: 'fa-exclamation-triangle'
-            };
+// Afficher une notification
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
 
-            notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 text-white ${colors[type]}`;
-            notification.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="fas ${icons[type]} text-xl"></i>
-                    <span>${message}</span>
-                </div>
-            `;
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500',
+        warning: 'bg-yellow-500'
+    };
 
-            notification.classList.remove('hidden');
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        info: 'fa-info-circle',
+        warning: 'fa-exclamation-triangle'
+    };
 
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 4000);
-        }
+    notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 text-white ${colors[type]}`;
+    notification.innerHTML = `
+        <div class="flex items-center gap-3">
+            <i class="fas ${icons[type]} text-xl"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    notification.classList.remove('hidden');
+
+    setTimeout(() => {
+        notification.classList.add('hidden');
+    }, 4000);
+}
