@@ -413,6 +413,7 @@ function handleSubmit(e) {
           showNotification(response.message, "success");
           closeModal();
           loadTerrains();
+          //localStorage.setItem("")
         } else {
           showNotification(
             response.message || "Erreur lors de l'enregistrement",
@@ -465,6 +466,7 @@ function confirmDelete() {
           showNotification(response.message, "success");
           closeDeleteModal();
           loadTerrains();
+          //localStorage.setItem("")
         } else {
           showNotification(
             response.message || "Erreur lors de la suppression",

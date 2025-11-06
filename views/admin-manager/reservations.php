@@ -239,6 +239,7 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Confirmer l'action</h3>
                 <p class="text-gray-600" id="modalMessage">Êtes-vous sûr de vouloir effectuer cette action ?</p>
             </div>
+            <form method="POSt" action="../../actions/admin-manager/reservation/validate_reservation.php">
             <div class="flex gap-3">
                 <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
                     Annuler
@@ -247,6 +248,7 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                     Confirmer
                 </button>
             </div>
+            </form>
         </div>
     </div>
 

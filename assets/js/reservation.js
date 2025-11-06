@@ -1,11 +1,11 @@
 function validateReservation(id) {
     showModal('Voulez-vous confirmer cette réservation ?', () => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '../../actions/admin-respo/validate_reservation.php', true);
+        xhr.open('POST', '../../actions/admin-respo/reservation/validate_reservation.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
 
         xhr.onload = function() {
-            if (xhr.status === 200) {
+            if (xhr.status === 200 ) {
                 try {
                     const response = JSON.parse(xhr.responseText);
                     if (response.success) {
@@ -52,9 +52,7 @@ function cancelReservation(id) {
     });
 }
 
-// ============================================================
 // 2. FILTRES ET RECHERCHE (Rechargement de page)
-// ============================================================
 function applyFilters() {
     const searchQuery = document.getElementById('searchInput').value;
     const filterDate = document.getElementById('filterDate').value;
@@ -75,9 +73,7 @@ function resetFilters() {
     window.location.href = window.location.pathname;
 }
 
-// ============================================================
 // 3. MODAL DE CONFIRMATION
-// ============================================================
 function showModal(message, onConfirm) {
     document.getElementById('modalMessage').textContent = message;
     document.getElementById('confirmModal').classList.remove('hidden');
@@ -91,9 +87,7 @@ function closeModal() {
     document.getElementById('confirmModal').classList.add('hidden');
 }
 
-// ============================================================
 // 4. NOTIFICATIONS
-// ============================================================
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     const colors = {
@@ -109,23 +103,22 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.classList.add('hidden'), 3000);
 }
 
-// ============================================================
+
 // 5. ÉVÉNEMENTS (Debounce pour la recherche)
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Recherche avec debounce
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => applyFilters(), 800);
-    });
+      document.addEventListener('DOMContentLoaded', () => {
+          // Recherche avec debounce
+          let searchTimeout;
+          document.getElementById('searchInput').addEventListener('input', function() {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(() => applyFilters(), 800);
+          });
 
-    // Filtrage par date
-    document.getElementById('filterDate').addEventListener('change', applyFilters);
+          // Filtrage par date
+          document.getElementById('filterDate').addEventListener('change', applyFilters);
 
-    // Filtrage par statut
-    document.getElementById('filterStatus').addEventListener('change', applyFilters);
-});
+          // Filtrage par statut
+          document.getElementById('filterStatus').addEventListener('change', applyFilters);
+      });
 
                document.addEventListener('DOMContentLoaded', () => {
               const sidebar = document.getElementById('sidebar');

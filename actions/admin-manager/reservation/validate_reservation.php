@@ -1,9 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
-include_once '../../config/database.php';
+$file = __DIR__ . '/../../../config/database.php';
+if (!file_exists($file)) {
+    die("Fichier introuvable : $file");
+}
+require_once $file;
+
+
 
 // ===============================
 $currentFilterDate = $_GET['date'] ?? '';
@@ -16,7 +19,6 @@ $_SESSION['currentFilters'] = [
     'search' => $searchQuery
 ];
 
-// ===============================
 
 // Confirmées
 $queryConfirmedReservations = "SELECT COUNT(*) FROM reservation WHERE statut='confirmee'";
@@ -36,9 +38,7 @@ $stmt = $pdo->prepare($queryTotalReservations);
 $stmt->execute();
 $_SESSION['totalReservations'] = $stmt->fetchColumn();
 
-// ===============================
 // Détails réservations
-// ===============================
 $queryReservationDetails = "
     SELECT 
         r.id_reservation,
@@ -103,9 +103,7 @@ $stmt = $pdo->prepare($queryReservationDetails);
 $stmt->execute($queryParams);
 $_SESSION['reservationDetail'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ===============================
 // Revenu total
-// ===============================
 $queryRevenue = "
     SELECT COALESCE(SUM(
         (t.prix_heure * TIMESTAMPDIFF(HOUR, c.heure_debut, c.heure_fin)) +
@@ -125,4 +123,23 @@ $queryRevenue = "
 $stmtRevenue = $pdo->prepare($queryRevenue);
 $stmtRevenue->execute();
 $_SESSION['totalRevenue'] = number_format($stmtRevenue->fetchColumn(), 2);
-?>
+
+$data = json_decode(file_get_contents('php://input'), true);
+var_dump($data);
+$id = $data['id_reservation'] ?? null;
+
+if ($id) {
+    $stmt = $pdo->prepare("UPDATE reservation SET statut = 'confirmee' WHERE id_reservation = ?");
+    $success = $stmt->execute([$id]);
+
+    echo json_encode([
+        'success' => $success,
+        'message' => $success ? 'Réservation confirmée avec succès' : 'Erreur lors de la mise à jour'
+    ]);
+} else {
+    echo json_encode(['success' => false, 'message' => 'ID manquant']);
+}
+
+
+
+
