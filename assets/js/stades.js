@@ -7,6 +7,19 @@ const uploadPreview = document.getElementById("uploadPreview");
 const previewContainer = document.getElementById("previewContainer");
 const previewImage = document.getElementById("previewImage");
 const imageInput = document.getElementById("image");
+const villeInput = document.getElementById("ville");
+const filterVilleInput = document.getElementById("filterVille");
+const modalResponsableSelect = document.getElementById("id_responsable");
+const filterResponsableSelect = document.getElementById("filterResponsable");
+
+let allResponsables = [];
+
+function normalizeVille(value) {
+  return (value || "")
+    .toString()
+    .trim()
+    .toLocaleLowerCase("fr-FR");
+}
 
 // Écouter les changements dans d'autres onglets
 window.addEventListener("storage", function (e) {
@@ -96,32 +109,60 @@ function clearImage() {
 // Initialisation au chargement de la page
 document.addEventListener("DOMContentLoaded", function () {
   loadTerrains();
-  loadResponsables();
   setupEventListeners();
+  fetchAllResponsables()
+    .then(() => {
+      handleVilleChange();
+      handleFilterVilleChange();
+    })
+    .catch((error) => {
+      console.error(error);
+    });
 });
 
 // Configuration des écouteurs d'événements
 function setupEventListeners() {
   // Recherche en temps réel
-  document
-    .getElementById("searchInput")
-    .addEventListener("input", debounce(loadTerrains, 500));
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", debounce(loadTerrains, 500));
+  }
 
   // Filtres
-  document
-    .getElementById("filterCategorie")
-    .addEventListener("change", loadTerrains);
-  document
-    .getElementById("filterDisponibilite")
-    .addEventListener("change", loadTerrains);
-  document
-    .getElementById("filterResponsable")
-    .addEventListener("change", loadTerrains);
+  const filterCategorie = document.getElementById("filterCategorie");
+  if (filterCategorie) {
+    filterCategorie.addEventListener("change", loadTerrains);
+  }
+
+  const filterDisponibilite = document.getElementById("filterDisponibilite");
+  if (filterDisponibilite) {
+    filterDisponibilite.addEventListener("change", loadTerrains);
+  }
+
+  if (filterResponsableSelect) {
+    filterResponsableSelect.addEventListener("change", loadTerrains);
+  }
+
+  if (filterVilleInput) {
+    const handler = () => {
+      handleFilterVilleChange();
+      loadTerrains();
+    };
+    filterVilleInput.addEventListener("input", handler);
+    filterVilleInput.addEventListener("change", handler);
+  }
+
+  if (villeInput) {
+    const handler = () => handleVilleChange();
+    villeInput.addEventListener("input", handler);
+    villeInput.addEventListener("change", handler);
+  }
 
   // Formulaire
-  document
-    .getElementById("terrainForm")
-    .addEventListener("submit", handleSubmit);
+  const terrainForm = document.getElementById("terrainForm");
+  if (terrainForm) {
+    terrainForm.addEventListener("submit", handleSubmit);
+  }
 }
 
 // Fonction debounce pour la recherche
@@ -140,9 +181,11 @@ function debounce(func, wait) {
 // Charger tous les terrains
 function loadTerrains() {
   const search = document.getElementById("searchInput").value;
-  const categorie = document.getElementById("filterCategorie").value;
-  const disponibilite = document.getElementById("filterDisponibilite").value;
-  const responsable = document.getElementById("filterResponsable").value;
+  const categorie = document.getElementById("filterCategorie")?.value || "";
+  const disponibilite =
+    document.getElementById("filterDisponibilite")?.value || "";
+  const responsable = filterResponsableSelect ? filterResponsableSelect.value : "";
+  const ville = filterVilleInput ? filterVilleInput.value : "";
 
   showLoader();
 
@@ -151,7 +194,13 @@ function loadTerrains() {
     "GET",
     `../../actions/admin-manager/stade/get_stades.php?search=${encodeURIComponent(
       search
-    )}&categorie=${categorie}&disponibilite=${disponibilite}&responsable=${responsable}`,
+    )}&categorie=${encodeURIComponent(
+      categorie
+    )}&disponibilite=${encodeURIComponent(
+      disponibilite
+    )}&responsable=${encodeURIComponent(
+      responsable
+    )}&ville=${encodeURIComponent(ville)}`,
     true
   );
 
@@ -237,6 +286,10 @@ function displayTerrains(terrains) {
                 
                 <div class="space-y-2 mb-4 text-sm text-gray-600">
                     <div class="flex items-center gap-2">
+                        <i class="fas fa-city text-emerald-600 w-4"></i>
+                        <span>${terrain.ville || "Non renseignée"}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
                         <i class="fas fa-map-marker-alt text-emerald-600 w-4"></i>
                         <span class="truncate">${terrain.localisation}</span>
                     </div>
@@ -280,46 +333,110 @@ function displayTerrains(terrains) {
     .join("");
 }
 
-// Charger les responsables
-function loadResponsables() {
-  const xhr = new XMLHttpRequest();
-  xhr.open("GET", "../../actions/admin-manager/stade/get_managers.php", true);
+// Charger tous les responsables disponibles
+function fetchAllResponsables() {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "../../actions/admin-manager/stade/get_managers.php", true);
 
-  xhr.onload = function () {
-    if (xhr.status === 200) {
-      try {
-        const response = JSON.parse(xhr.responseText);
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText);
 
-        if (response.success) {
-          populateResponsableSelects(response.responsables);
+          if (response.success) {
+            allResponsables = Array.isArray(response.responsables)
+              ? response.responsables
+              : [];
+            updateFilterResponsableOptions();
+            filterFormResponsablesByVille(villeInput ? villeInput.value : "");
+            resolve(allResponsables);
+          } else {
+            reject(response.message || "Erreur lors du chargement des responsables");
+          }
+        } catch (e) {
+          reject("Erreur lors du traitement de la réponse des responsables");
         }
-      } catch (e) {
-        console.error("Erreur lors du chargement des responsables");
+      } else {
+        reject("Erreur de connexion au serveur lors du chargement des responsables");
       }
-    }
-  };
+    };
 
-  xhr.send();
+    xhr.onerror = function () {
+      reject("Erreur réseau lors du chargement des responsables");
+    };
+
+    xhr.send();
+  });
 }
 
-// Remplir les listes déroulantes des responsables
-function populateResponsableSelects(responsables) {
-  const modalSelect = document.getElementById("id_responsable");
-  const filterSelect = document.getElementById("filterResponsable");
+function updateFilterResponsableOptions() {
+  if (!filterResponsableSelect) return;
 
-  // Modal select
-  modalSelect.innerHTML =
-    '<option value="">Sélectionner un responsable...</option>' +
-    responsables
-      .map((r) => `<option value="${r.email}">${r.nom} ${r.prenom}</option>`)
-      .join("");
+  const selectedVille = normalizeVille(filterVilleInput ? filterVilleInput.value : "");
 
-  // Filter select
-  filterSelect.innerHTML =
+  const responsables = !selectedVille
+    ? allResponsables
+    : allResponsables.filter((r) => normalizeVille(r.ville) === selectedVille);
+
+  const currentValue = filterResponsableSelect.value;
+
+  filterResponsableSelect.innerHTML =
     '<option value="">Tous</option>' +
     responsables
       .map((r) => `<option value="${r.email}">${r.nom} ${r.prenom}</option>`)
       .join("");
+
+  const stillExists = responsables.some((r) => r.email === currentValue);
+  filterResponsableSelect.value = stillExists ? currentValue : "";
+}
+
+function filterFormResponsablesByVille(selectedVille, selectedEmail = "") {
+  if (!modalResponsableSelect) return;
+
+  const normalizedVille = normalizeVille(selectedVille);
+  const responsables = !normalizedVille
+    ? allResponsables
+    : allResponsables.filter((r) => normalizeVille(r.ville) === normalizedVille);
+
+  modalResponsableSelect.innerHTML =
+    '<option value="">Sélectionner un responsable...</option>';
+
+  if (responsables.length === 0) {
+    modalResponsableSelect.innerHTML +=
+      '<option value="" disabled>Aucun responsable disponible pour cette ville</option>';
+    modalResponsableSelect.value = "";
+    return;
+  }
+
+  modalResponsableSelect.innerHTML += responsables
+    .map((r) => `<option value="${r.email}">${r.nom} ${r.prenom}</option>`)
+    .join("");
+
+  if (selectedEmail) {
+    modalResponsableSelect.value = selectedEmail;
+  }
+}
+
+function handleVilleChange(selectedEmail = "") {
+  if (!villeInput) return;
+  if (allResponsables.length === 0) {
+    fetchAllResponsables()
+      .then(() => filterFormResponsablesByVille(villeInput.value, selectedEmail))
+      .catch(() => filterFormResponsablesByVille(villeInput.value, selectedEmail));
+    return;
+  }
+  filterFormResponsablesByVille(villeInput.value, selectedEmail);
+}
+
+function handleFilterVilleChange() {
+  if (allResponsables.length === 0) {
+    fetchAllResponsables()
+      .then(updateFilterResponsableOptions)
+      .catch(updateFilterResponsableOptions);
+    return;
+  }
+  updateFilterResponsableOptions();
 }
 
 // Ouvrir le modal d'ajout
@@ -331,6 +448,15 @@ function openAddModal() {
 
   // Réinitialiser complètement l'affichage de l'image
   clearImage();
+
+  if (villeInput) {
+    villeInput.value = "";
+    handleVilleChange();
+  }
+
+  if (modalResponsableSelect) {
+    modalResponsableSelect.value = "";
+  }
 
   document.getElementById("terrainModal").classList.remove("hidden");
 }
@@ -365,8 +491,10 @@ function editTerrain(id) {
           document.getElementById("disponibilite").value =
             terrain.disponibilite;
           document.getElementById("localisation").value = terrain.localisation;
-          document.getElementById("id_responsable").value =
-            terrain.id_responsable || "";
+          if (villeInput) {
+            villeInput.value = terrain.ville || "";
+          }
+          handleVilleChange(terrain.id_responsable || "");
 
           // Gérer l'affichage de l'image existante
           if (terrain.image) {

@@ -1,5 +1,4 @@
 <?php
-// actions/admin-respo/get_terrain.php
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
 

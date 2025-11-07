@@ -13,6 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
+
+    if (!is_array($data)) {
+        $data = [];
+    } else {
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $data[$key] = trim($value);
+            }
+        }
+    }
     
     if (empty($data['id_terrain'])) {
         echo json_encode(['success' => false, 'message' => 'ID du terrain manquant']);
@@ -36,7 +46,7 @@ try {
     }
     
     // Validation des champs requis
-    $required = ['nom_te', 'categorie', 'type', 'taille', 'prix_heure', 'disponibilite', 'localisation'];
+    $required = ['nom_te', 'categorie', 'type', 'taille', 'prix_heure', 'disponibilite', 'ville', 'localisation'];
     foreach ($required as $field) {
         if (empty($data[$field])) {
             echo json_encode(['success' => false, 'message' => "Le champ $field est requis"]);
@@ -47,6 +57,20 @@ try {
     // Validation du prix
     if (!is_numeric($data['prix_heure']) || $data['prix_heure'] < 0) {
         echo json_encode(['success' => false, 'message' => 'Le prix doit être un nombre positif']);
+        exit;
+    }
+
+    if (!empty($data['ville'])) {
+        if (function_exists('mb_convert_case')) {
+            $data['ville'] = mb_convert_case($data['ville'], MB_CASE_TITLE, 'UTF-8');
+        } else {
+            $data['ville'] = ucwords(strtolower($data['ville']));
+        }
+    }
+
+    $villeLength = function_exists('mb_strlen') ? mb_strlen($data['ville']) : strlen($data['ville']);
+    if ($villeLength > 100) {
+        echo json_encode(['success' => false, 'message' => 'La ville ne peut pas dépasser 100 caractères']);
         exit;
     }
     
@@ -93,7 +117,7 @@ try {
     
     // Mise à jour du terrain
     $sql = "UPDATE terrain SET nom_te = :nom_te, categorie = :categorie, type = :type, taille = :taille, 
-            prix_heure = :prix_heure, localisation = :localisation, disponibilite = :disponibilite, 
+            prix_heure = :prix_heure, ville = :ville, localisation = :localisation, disponibilite = :disponibilite, 
             id_responsable = :id_responsable, image = :image WHERE id_terrain = :id";
     
     $stmt = $pdo->prepare($sql);
@@ -103,6 +127,7 @@ try {
         ':type' => $data['type'],
         ':taille' => $data['taille'],
         ':prix_heure' => $data['prix_heure'],
+        ':ville' => $data['ville'],
         ':localisation' => $data['localisation'],
         ':disponibilite' => $data['disponibilite'],
         ':id_responsable' => $id_responsable,
