@@ -216,7 +216,7 @@ try {
                                     <span class="text-sm text-gray-500 font-normal">/heure</span>
                                 </div>
                                 <?php if ($terrain['disponibilite'] === 'disponible'): ?>
-                                    <a href="views/auth/register.php" 
+                                    <a href="reserver.php?id_terrain=<?php echo $terrain['id_terrain']; ?>" 
                                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-semibold">
                                         Réserver
                                     </a>

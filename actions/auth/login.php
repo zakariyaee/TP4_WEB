@@ -68,7 +68,7 @@ try {
             $redirectUrl = '../admin-manager/dashboard.php';
             break;
         case 'joueur':
-            $redirectUrl = '../player/accueil.php';
+            $redirectUrl = '../player/reserver.php';
             break;
         default:
             $redirectUrl = '../index.php';
