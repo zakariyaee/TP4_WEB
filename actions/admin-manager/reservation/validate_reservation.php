@@ -97,7 +97,7 @@ $queryReservationDetails .= "
     GROUP BY r.id_reservation, u.nom, u.prenom, t.nom_te, t.categorie, 
              r.date_reservation, c.heure_debut, c.heure_fin, t.prix_heure, r.statut
     ORDER BY r.date_reservation DESC
-";
+";  
 
 $stmt = $pdo->prepare($queryReservationDetails);
 $stmt->execute($queryParams);
@@ -123,22 +123,6 @@ $queryRevenue = "
 $stmtRevenue = $pdo->prepare($queryRevenue);
 $stmtRevenue->execute();
 $_SESSION['totalRevenue'] = number_format($stmtRevenue->fetchColumn(), 2);
-
-$data = json_decode(file_get_contents('php://input'), true);
-var_dump($data);
-$id = $data['id_reservation'] ?? null;
-
-if ($id) {
-    $stmt = $pdo->prepare("UPDATE reservation SET statut = 'confirmee' WHERE id_reservation = ?");
-    $success = $stmt->execute([$id]);
-
-    echo json_encode([
-        'success' => $success,
-        'message' => $success ? 'Réservation confirmée avec succès' : 'Erreur lors de la mise à jour'
-    ]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'ID manquant']);
-}
 
 
 

@@ -25,7 +25,7 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
         <?php include_once '../../includes/sidebar.php'; ?>
 
         <!-- Main Content -->
-        <main id="content" class="flex-1 pl-0 transition-all duration-300">
+        <main id="content" class="pl-64 transition-all duration-300">
             <div class="p-8">
                 <!-- Header -->
                 <div class="flex items-center gap-4 mb-8">
@@ -42,22 +42,21 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">Total Réservations</p>
-                        <h3 class="text-3xl font-bold text-gray-900"><?= $_SESSION['totalReservations'] ?? 0 ?></h3>
+                        <h3 id="stat-total-reservations" class="text-3xl font-bold text-gray-900">0</h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">Confirmées</p>
-                        <h3 class="text-3xl font-bold text-blue-600"><?= $_SESSION['totalConfirmedReservations'] ?? 0 ?></h3>
+                        <h3 id="stat-confirmed-reservations" class="text-3xl font-bold text-blue-600">0</h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">En Attente</p>
-                        <h3 class="text-3xl font-bold text-yellow-600"><?= $_SESSION['totalPendingReservations'] ?? 0 ?></h3>
+                        <h3 id="stat-pending-reservations" class="text-3xl font-bold text-yellow-600">0</h3>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                         <p class="text-gray-600 text-sm mb-1">Revenus (Confirmées)</p>
-                        <h3 class="text-3xl font-bold text-green-600"><?= $_SESSION['totalRevenue'] ?? '0.00' ?> DH</h3>
+                        <h3 id="stat-total-revenue" class="text-3xl font-bold text-green-600">0.00 DH</h3>
                     </div>
                 </div>
-
                 <!-- Filters & Search -->
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -239,7 +238,6 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Confirmer l'action</h3>
                 <p class="text-gray-600" id="modalMessage">Êtes-vous sûr de vouloir effectuer cette action ?</p>
             </div>
-            <form method="POSt" action="../../actions/admin-manager/reservation/validate_reservation.php">
             <div class="flex gap-3">
                 <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
                     Annuler
@@ -248,7 +246,7 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                     Confirmer
                 </button>
             </div>
-            </form>
+            
         </div>
     </div>
 
