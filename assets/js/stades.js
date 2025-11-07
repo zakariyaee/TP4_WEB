@@ -9,10 +9,15 @@ const previewImage = document.getElementById("previewImage");
 const imageInput = document.getElementById("image");
 const villeInput = document.getElementById("ville");
 const filterVilleInput = document.getElementById("filterVille");
-const modalResponsableSelect = document.getElementById("id_responsable");
-const filterResponsableSelect = document.getElementById("filterResponsable");
+const modalResponsableInput = document.getElementById("id_responsable_input");
+const modalResponsableHidden = document.getElementById("id_responsable");
+const filterResponsableInput = document.getElementById("filterResponsable");
+const filterResponsableIdHidden = document.getElementById("filterResponsableId");
+const responsableList = document.getElementById("responsableList");
+const filterResponsableList = document.getElementById("filterResponsableList");
 
 let allResponsables = [];
+let responsableMap = new Map(); // Pour mapper le texte affiché à l'email
 
 function normalizeVille(value) {
   return (value || "")
@@ -139,8 +144,33 @@ function setupEventListeners() {
     filterDisponibilite.addEventListener("change", loadTerrains);
   }
 
-  if (filterResponsableSelect) {
-    filterResponsableSelect.addEventListener("change", loadTerrains);
+  if (filterResponsableInput) {
+    filterResponsableInput.addEventListener("input", (e) => {
+      const inputValue = e.target.value;
+      const option = Array.from(filterResponsableList.options).find(
+        (opt) => opt.value === inputValue
+      );
+      if (option && option.dataset.email) {
+        if (filterResponsableIdHidden) {
+          filterResponsableIdHidden.value = option.dataset.email;
+        }
+      } else if (!inputValue) {
+        if (filterResponsableIdHidden) filterResponsableIdHidden.value = "";
+      }
+      loadTerrains();
+    });
+    filterResponsableInput.addEventListener("blur", (e) => {
+      // Si la valeur ne correspond à aucune option, réinitialiser
+      const inputValue = e.target.value;
+      const option = Array.from(filterResponsableList.options).find(
+        (opt) => opt.value === inputValue
+      );
+      if (!option && inputValue) {
+        e.target.value = "";
+        if (filterResponsableIdHidden) filterResponsableIdHidden.value = "";
+        loadTerrains();
+      }
+    });
   }
 
   if (filterVilleInput) {
@@ -156,6 +186,34 @@ function setupEventListeners() {
     const handler = () => handleVilleChange();
     villeInput.addEventListener("input", handler);
     villeInput.addEventListener("change", handler);
+  }
+
+  // Gérer la sélection du responsable dans le formulaire
+  if (modalResponsableInput && responsableList) {
+    modalResponsableInput.addEventListener("input", (e) => {
+      const inputValue = e.target.value;
+      const option = Array.from(responsableList.options).find(
+        (opt) => opt.value === inputValue
+      );
+      if (option && option.dataset.email) {
+        if (modalResponsableHidden) {
+          modalResponsableHidden.value = option.dataset.email;
+        }
+      } else if (!inputValue) {
+        if (modalResponsableHidden) modalResponsableHidden.value = "";
+      }
+    });
+    modalResponsableInput.addEventListener("blur", (e) => {
+      // Si la valeur ne correspond à aucune option, réinitialiser
+      const inputValue = e.target.value;
+      const option = Array.from(responsableList.options).find(
+        (opt) => opt.value === inputValue
+      );
+      if (!option && inputValue) {
+        e.target.value = "";
+        if (modalResponsableHidden) modalResponsableHidden.value = "";
+      }
+    });
   }
 
   // Formulaire
@@ -184,7 +242,7 @@ function loadTerrains() {
   const categorie = document.getElementById("filterCategorie")?.value || "";
   const disponibilite =
     document.getElementById("filterDisponibilite")?.value || "";
-  const responsable = filterResponsableSelect ? filterResponsableSelect.value : "";
+  const responsable = filterResponsableIdHidden ? filterResponsableIdHidden.value : "";
   const ville = filterVilleInput ? filterVilleInput.value : "";
 
   showLoader();
@@ -371,7 +429,7 @@ function fetchAllResponsables() {
 }
 
 function updateFilterResponsableOptions() {
-  if (!filterResponsableSelect) return;
+  if (!filterResponsableList || !filterResponsableInput) return;
 
   const selectedVille = normalizeVille(filterVilleInput ? filterVilleInput.value : "");
 
@@ -379,43 +437,53 @@ function updateFilterResponsableOptions() {
     ? allResponsables
     : allResponsables.filter((r) => normalizeVille(r.ville) === selectedVille);
 
-  const currentValue = filterResponsableSelect.value;
+  // Vider et remplir le datalist
+  filterResponsableList.innerHTML = responsables
+    .map((r) => {
+      const displayText = `${r.nom} ${r.prenom} - ${r.ville}`;
+      responsableMap.set(displayText, r.email);
+      return `<option value="${displayText}" data-email="${r.email}">`;
+    })
+    .join("");
 
-  filterResponsableSelect.innerHTML =
-    '<option value="">Tous</option>' +
-    responsables
-      .map((r) => `<option value="${r.email}">${r.nom} ${r.prenom}</option>`)
-      .join("");
-
-  const stillExists = responsables.some((r) => r.email === currentValue);
-  filterResponsableSelect.value = stillExists ? currentValue : "";
+  // Si la valeur actuelle n'existe plus dans la liste filtrée, réinitialiser
+  const currentText = filterResponsableInput.value;
+  const currentEmail = filterResponsableIdHidden ? filterResponsableIdHidden.value : "";
+  if (currentEmail && !responsables.some((r) => r.email === currentEmail)) {
+    filterResponsableInput.value = "";
+    if (filterResponsableIdHidden) filterResponsableIdHidden.value = "";
+  }
 }
 
 function filterFormResponsablesByVille(selectedVille, selectedEmail = "") {
-  if (!modalResponsableSelect) return;
+  if (!responsableList || !modalResponsableInput) return;
 
   const normalizedVille = normalizeVille(selectedVille);
   const responsables = !normalizedVille
     ? allResponsables
     : allResponsables.filter((r) => normalizeVille(r.ville) === normalizedVille);
 
-  modalResponsableSelect.innerHTML =
-    '<option value="">Sélectionner un responsable...</option>';
+  // Vider et remplir le datalist
+  responsableList.innerHTML = "";
+  responsableMap.clear();
 
   if (responsables.length === 0) {
-    modalResponsableSelect.innerHTML +=
-      '<option value="" disabled>Aucun responsable disponible pour cette ville</option>';
-    modalResponsableSelect.value = "";
+    modalResponsableInput.value = "";
+    if (modalResponsableHidden) modalResponsableHidden.value = "";
     return;
   }
 
-  modalResponsableSelect.innerHTML += responsables
-    .map((r) => `<option value="${r.email}">${r.nom} ${r.prenom}</option>`)
+  responsableList.innerHTML = responsables
+    .map((r) => {
+      const displayText = `${r.nom} ${r.prenom} - ${r.ville}`;
+      responsableMap.set(displayText, r.email);
+      if (selectedEmail && r.email === selectedEmail) {
+        modalResponsableInput.value = displayText;
+        if (modalResponsableHidden) modalResponsableHidden.value = r.email;
+      }
+      return `<option value="${displayText}" data-email="${r.email}">`;
+    })
     .join("");
-
-  if (selectedEmail) {
-    modalResponsableSelect.value = selectedEmail;
-  }
 }
 
 function handleVilleChange(selectedEmail = "") {
@@ -454,8 +522,11 @@ function openAddModal() {
     handleVilleChange();
   }
 
-  if (modalResponsableSelect) {
-    modalResponsableSelect.value = "";
+  if (modalResponsableInput) {
+    modalResponsableInput.value = "";
+  }
+  if (modalResponsableHidden) {
+    modalResponsableHidden.value = "";
   }
 
   document.getElementById("terrainModal").classList.remove("hidden");
@@ -495,6 +566,14 @@ function editTerrain(id) {
             villeInput.value = terrain.ville || "";
           }
           handleVilleChange(terrain.id_responsable || "");
+          
+          // Mettre à jour le champ responsable après le filtrage
+          if (terrain.id_responsable && allResponsables.length > 0) {
+            const responsable = allResponsables.find((r) => r.email === terrain.id_responsable);
+            if (responsable && modalResponsableInput) {
+              modalResponsableInput.value = `${responsable.nom} ${responsable.prenom} - ${responsable.ville}`;
+            }
+          }
 
           // Gérer l'affichage de l'image existante
           if (terrain.image) {

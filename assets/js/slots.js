@@ -31,48 +31,130 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Configuration des écouteurs d'événements
 function setupEventListeners() {
-    document.getElementById('filterTerrain').addEventListener('change', loadCreneaux);
+    const filterTerrain = document.getElementById('filterTerrain');
+    const filterTerrainId = document.getElementById('filterTerrainId');
+    const filterTerrainList = document.getElementById('filterTerrainList');
+    
+    if (filterTerrain) {
+        filterTerrain.addEventListener('input', (e) => {
+            const inputValue = e.target.value;
+            const option = Array.from(filterTerrainList.options).find(
+                (opt) => opt.value === inputValue
+            );
+            if (option && option.dataset.id) {
+                if (filterTerrainId) {
+                    filterTerrainId.value = option.dataset.id;
+                }
+            } else if (!inputValue) {
+                if (filterTerrainId) filterTerrainId.value = "";
+            }
+            loadCreneaux();
+        });
+        filterTerrain.addEventListener('blur', (e) => {
+            const inputValue = e.target.value;
+            const option = Array.from(filterTerrainList.options).find(
+                (opt) => opt.value === inputValue
+            );
+            if (!option && inputValue) {
+                e.target.value = "";
+                if (filterTerrainId) filterTerrainId.value = "";
+                loadCreneaux();
+            }
+        });
+    }
+    
     document.getElementById('filterJour').addEventListener('change', loadCreneaux);
     document.getElementById('filterDisponibilite').addEventListener('change', loadCreneaux);
+    
+    // Gérer la sélection du terrain dans le formulaire
+    const terrainInput = document.getElementById('id_terrain_input');
+    const terrainHidden = document.getElementById('id_terrain');
+    const terrainList = document.getElementById('terrainList');
+    
+    if (terrainInput && terrainList) {
+        terrainInput.addEventListener('input', (e) => {
+            const inputValue = e.target.value;
+            const option = Array.from(terrainList.options).find(
+                (opt) => opt.value === inputValue
+            );
+            if (option && option.dataset.id) {
+                if (terrainHidden) {
+                    terrainHidden.value = option.dataset.id;
+                }
+            } else if (!inputValue) {
+                if (terrainHidden) terrainHidden.value = "";
+            }
+        });
+        terrainInput.addEventListener('blur', (e) => {
+            const inputValue = e.target.value;
+            const option = Array.from(terrainList.options).find(
+                (opt) => opt.value === inputValue
+            );
+            if (!option && inputValue) {
+                e.target.value = "";
+                if (terrainHidden) terrainHidden.value = "";
+            }
+        });
+    }
+    
     document.getElementById('creneauForm').addEventListener('submit', handleSubmit);
 }
 
 // Charger les terrains
 function loadTerrains() {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '../../actions/admin-manager/stade/get_stades.php', true);
 
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    populateTerrainSelects(response.terrains);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        populateTerrainSelects(response.terrains);
+                        resolve(response.terrains);
+                    } else {
+                        reject(response.message || 'Erreur lors du chargement des terrains');
+                    }
+                } catch (e) {
+                    console.error('Erreur lors du chargement des terrains');
+                    reject(e);
                 }
-            } catch (e) {
-                console.error('Erreur lors du chargement des terrains');
+            } else {
+                reject('Erreur de connexion');
             }
-        }
-    };
+        };
 
-    xhr.send();
+        xhr.onerror = function() {
+            reject('Erreur réseau');
+        };
+
+        xhr.send();
+    });
 }
 
-// Remplir les sélecteurs de terrain
+// Remplir les datalist de terrain
 function populateTerrainSelects(terrains) {
-    const modalSelect = document.getElementById('id_terrain');
-    const filterSelect = document.getElementById('filterTerrain');
+    const modalList = document.getElementById('terrainList');
+    const filterList = document.getElementById('filterTerrainList');
 
-    modalSelect.innerHTML = '<option value="">Sélectionner un terrain...</option>' +
-        terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te} - ${t.categorie}</option>`).join('');
+    if (modalList) {
+        modalList.innerHTML = terrains
+            .map(t => `<option value="${t.nom_te} - ${t.categorie} (${t.ville})" data-id="${t.id_terrain}">`)
+            .join('');
+    }
 
-    filterSelect.innerHTML = '<option value="">Tous les terrains</option>' +
-        terrains.map(t => `<option value="${t.id_terrain}">${t.nom_te}</option>`).join('');
+    if (filterList) {
+        filterList.innerHTML = terrains
+            .map(t => `<option value="${t.nom_te} - ${t.ville}" data-id="${t.id_terrain}">`)
+            .join('');
+    }
 }
 
 // Charger les créneaux
 function loadCreneaux() {
-    const terrain = document.getElementById('filterTerrain').value;
+    const filterTerrainId = document.getElementById('filterTerrainId');
+    const terrain = filterTerrainId ? filterTerrainId.value : "";
     const jour = document.getElementById('filterJour').value;
     const disponibilite = document.getElementById('filterDisponibilite').value;
 
@@ -313,6 +395,10 @@ function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Ajouter un créneau';
     document.getElementById('creneauForm').reset();
     document.getElementById('creneauId').value = '';
+    const terrainInput = document.getElementById('id_terrain_input');
+    const terrainHidden = document.getElementById('id_terrain');
+    if (terrainInput) terrainInput.value = '';
+    if (terrainHidden) terrainHidden.value = '';
     document.getElementById('creneauModal').classList.remove('hidden');
 }
 
@@ -331,7 +417,33 @@ function editCreneau(id) {
                     const creneau = response.creneau;
                     document.getElementById('modalTitle').textContent = 'Modifier le créneau';
                     document.getElementById('creneauId').value = creneau.id_creneaux;
-                    document.getElementById('id_terrain').value = creneau.id_terrain;
+                    
+                    // Trouver le terrain dans la liste et afficher son texte
+                    const terrainHidden = document.getElementById('id_terrain');
+                    const terrainInput = document.getElementById('id_terrain_input');
+                    const terrainList = document.getElementById('terrainList');
+                    if (terrainHidden) terrainHidden.value = creneau.id_terrain;
+                    
+                    // Charger les terrains si nécessaire pour trouver le nom
+                    if (terrainList && terrainList.options.length > 0) {
+                        const terrainOption = Array.from(terrainList.options).find(
+                            (opt) => opt.dataset.id === creneau.id_terrain.toString()
+                        );
+                        if (terrainOption && terrainInput) {
+                            terrainInput.value = terrainOption.value;
+                        }
+                    } else {
+                        // Recharger les terrains pour avoir la liste
+                        loadTerrains().then(() => {
+                            const terrainOption = Array.from(terrainList.options).find(
+                                (opt) => opt.dataset.id === creneau.id_terrain.toString()
+                            );
+                            if (terrainOption && terrainInput) {
+                                terrainInput.value = terrainOption.value;
+                            }
+                        });
+                    }
+                    
                     document.getElementById('jour_semaine').value = creneau.jour_semaine;
                     document.getElementById('heure_debut').value = creneau.heure_debut;
                     document.getElementById('heure_fin').value = creneau.heure_fin;

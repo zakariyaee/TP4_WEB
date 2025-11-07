@@ -6,10 +6,29 @@ checkAdminOrRespo();
 $pageTitle = "Gestion des Terrains";
 $isAdmin = $_SESSION['user_role'] === 'admin';
 $moroccanCities = [
-    'Tétouan', 'Martil', 'Azla', 'Rabat', 'Casablanca', 'Marrakech',
-    'Fès', 'Tanger', 'Agadir', 'Salé', 'Meknès', 'Oujda', 'Nador',
-    'Kenitra', 'Chefchaouen', 'Larache', 'Safi', 'Essaouira', 'El Jadida',
-    'Beni Mellal', 'Khouribga', 'Errachidia', 'Laâyoune'
+    'Tétouan',
+    'Martil',
+    'Azla',
+    'Rabat',
+    'Casablanca',
+    'Marrakech',
+    'Fès',
+    'Tanger',
+    'Agadir',
+    'Salé',
+    'Meknès',
+    'Oujda',
+    'Nador',
+    'Kenitra',
+    'Chefchaouen',
+    'Larache',
+    'Safi',
+    'Essaouira',
+    'El Jadida',
+    'Beni Mellal',
+    'Khouribga',
+    'Errachidia',
+    'Laâyoune'
 ];
 ?>
 
@@ -37,10 +56,10 @@ $moroccanCities = [
                         <p class="text-gray-600 mt-2">Gérez tous les terrains de football</p>
                     </div>
                     <?php if ($isAdmin): ?>
-                    <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-lg">
-                        <i class="fas fa-plus"></i>
-                        <span>Ajouter un terrain</span>
-                    </button>
+                        <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-lg">
+                            <i class="fas fa-plus"></i>
+                            <span>Ajouter un terrain</span>
+                        </button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -76,9 +95,8 @@ $moroccanCities = [
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Responsable</label>
-                        <select id="filterResponsable" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">Tous</option>
-                        </select>
+                        <input type="text" id="filterResponsable" list="filterResponsableList" placeholder="Rechercher un responsable..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <input type="hidden" id="filterResponsableId">
                     </div>
                 </div>
             </div>
@@ -175,9 +193,8 @@ $moroccanCities = [
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Responsable *</label>
-                    <select id="id_responsable" name="id_responsable"  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                        <option value="">Sélectionner un responsable...</option>
-                    </select>
+                    <input type="text" id="id_responsable_input" list="responsableList" placeholder="Rechercher un responsable..." required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <input type="hidden" id="id_responsable" name="id_responsable">
                 </div>
 
                 <div>
@@ -235,7 +252,15 @@ $moroccanCities = [
     <datalist id="villeList">
         <?php foreach ($moroccanCities as $city): ?>
             <option value="<?php echo htmlspecialchars($city, ENT_QUOTES, 'UTF-8'); ?>">
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+    </datalist>
+
+    <datalist id="responsableList">
+        <!-- Sera rempli dynamiquement par JavaScript -->
+    </datalist>
+
+    <datalist id="filterResponsableList">
+        <!-- Sera rempli dynamiquement par JavaScript -->
     </datalist>
 
     <script src="../../assets/js/stades.js"></script>
