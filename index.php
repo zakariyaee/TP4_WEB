@@ -90,7 +90,7 @@ include 'actions/admin-manager/data_index.php';
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
                         </a>
-                        <a href="#terrains" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold text-sm hover:border-gray-300 smooth-hover">
+                        <a href="views/player/stades.php" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold text-sm hover:border-gray-300 smooth-hover">
                             Voir les terrains
                         </a>
                     </div>
@@ -262,7 +262,7 @@ include 'actions/admin-manager/data_index.php';
                                 <span class="text-xs text-gray-400">/heure</span>
                             </div>
                         </div>
-                        <a href="views/auth/register.php" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
+                        <a href="views/player/stades.php?categorie=<?php echo urlencode($categorie); ?>" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
                             Voir les terrains
                         </a>
                     </div>
