@@ -2,7 +2,7 @@
     <nav class="container mx-auto px-6 py-3">
         <div class="flex items-center justify-between">
             <!-- Logo -->
-            <a href="accueil.php" class="flex items-center gap-3">
+            <a href="stades.php" class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 rounded-xl flex items-center justify-center shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="white" class="w-6 h-6">
                         <rect x="3" y="4" width="18" height="16" rx="2" ry="2" stroke="white" stroke-width="2" />
