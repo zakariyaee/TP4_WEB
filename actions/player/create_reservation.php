@@ -74,7 +74,7 @@ try {
         FROM reservation 
         WHERE id_creneau = :id_creneau
         AND DATE(date_reservation) = :date
-        AND statut IN ('en_attente', 'confirmee')
+        AND statut IN ('confirmee')
     ");
     $stmt->execute([
         ':id_creneau' => $data['id_creneau'],
@@ -118,7 +118,6 @@ try {
         }
         
         // Calculer le prix total
-        // Les heures sont au format TIME (HH:MM:SS)
         $heure_debut_parts = explode(':', $creneau['heure_debut']);
         $heure_fin_parts = explode(':', $creneau['heure_fin']);
         $debut_minutes = ($heure_debut_parts[0] * 60) + ($heure_debut_parts[1] ?? 0);
@@ -147,26 +146,34 @@ try {
         // Créer la réservation
         $datetime_reservation = $date . ' ' . substr($creneau['heure_debut'], 0, 5) . ':00';
         
-        // Gérer l'équipe adverse si fournie
+        // Gérer l'équipe adverse (MODIFIÉ)
         $id_equipe_adverse = null;
-        if (!empty($data['nom_equipe_adverse'])) {
-            // Pour l'instant, on laisse null car on n'a pas de système de création d'équipe adverse
-            $id_equipe_adverse = null;
+        if (!empty($data['id_equipe_adverse'])) {
+            $id_equipe_adverse = intval($data['id_equipe_adverse']);
+            
+            // Vérifier que l'équipe existe
+            $stmt_check = $pdo->prepare("SELECT id_equipe FROM equipe WHERE id_equipe = :id");
+            $stmt_check->execute([':id' => $id_equipe_adverse]);
+            if (!$stmt_check->fetch()) {
+                $id_equipe_adverse = null;
+            }
         }
         
+        // Insérer la réservation avec statut 'confirmee' au lieu de 'en_attente'
         $stmt = $pdo->prepare("
             INSERT INTO reservation (
                 id_equipe, id_equipe_adverse, statut_equipe_adverse,
                 statut, id_joueur, date_reservation, id_terrain, id_creneau
             ) VALUES (
-                :id_equipe, :id_equipe_adverse, 'en_attente',
-                'en_attente', :id_joueur, :date_reservation, :id_terrain, :id_creneau
+                :id_equipe, :id_equipe_adverse, :statut_equipe_adverse,
+                'confirmee', :id_joueur, :date_reservation, :id_terrain, :id_creneau
             )
         ");
         
         $stmt->execute([
             ':id_equipe' => $id_equipe_finale,
             ':id_equipe_adverse' => $id_equipe_adverse,
+            ':statut_equipe_adverse' => $id_equipe_adverse ? 'en_attente' : 'en_attente',
             ':id_joueur' => $_SESSION['user_email'],
             ':date_reservation' => $datetime_reservation,
             ':id_terrain' => $data['id_terrain'],
@@ -203,7 +210,6 @@ try {
         ]);
         
     } catch (Exception $e) {
-        // Annuler la transaction en cas d'erreur
         $pdo->rollBack();
         throw $e;
     }
