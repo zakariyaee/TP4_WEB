@@ -36,24 +36,31 @@ try {
         exit;
     }
     
-    // Récupérer les créneaux disponibles pour ce terrain et ce jour
+    // Récupérer TOUS les créneaux avec leur statut de réservation
     $sql = "
         SELECT 
             c.id_creneaux,
             c.heure_debut,
             c.heure_fin,
-            c.disponibilite
+            c.disponibilite,
+            r.id_reservation,
+            r.statut as statut_reservation,
+            r.date_reservation,
+            e.nom_equipe as equipe_reservee,
+            CASE 
+                WHEN r.id_reservation IS NOT NULL THEN 1
+                ELSE 0
+            END as est_reserve
         FROM creneau c
-        WHERE c.id_terrain = :id_terrain
-        AND c.jour_semaine = :jour_semaine
-        AND c.disponibilite = 1
-        AND c.id_creneaux NOT IN (
-            SELECT r.id_creneau 
-            FROM reservation r
-            WHERE r.id_creneau = c.id_creneaux
+        LEFT JOIN reservation r ON (
+            r.id_creneau = c.id_creneaux
             AND DATE(r.date_reservation) = :date
             AND r.statut IN ('en_attente', 'confirmee')
         )
+        LEFT JOIN equipe e ON r.id_equipe = e.id_equipe
+        WHERE c.id_terrain = :id_terrain
+        AND c.jour_semaine = :jour_semaine
+        AND c.disponibilite = 1
         ORDER BY c.heure_debut
     ";
     
@@ -66,24 +73,59 @@ try {
     
     $creneaux = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Formater les heures
+    // Debug: Log pour vérifier
+    error_log("Date recherchée: " . $date);
+    error_log("Jour semaine: " . $jour_semaine);
+    error_log("ID terrain: " . $id_terrain);
+    error_log("Nombre de créneaux trouvés: " . count($creneaux));
+    
+    // Formater les heures et ajouter des informations
     foreach ($creneaux as &$creneau) {
+        // Debug
+        if ($creneau['id_reservation']) {
+            error_log("Créneau réservé trouvé: " . $creneau['id_creneaux'] . " - Réservation: " . $creneau['id_reservation']);
+        }
+        
         $creneau['heure_debut'] = substr($creneau['heure_debut'], 0, 5);
         $creneau['heure_fin'] = substr($creneau['heure_fin'], 0, 5);
         $creneau['libelle'] = $creneau['heure_debut'] . ' - ' . $creneau['heure_fin'];
+        
+        // Convertir est_reserve en booléen AVANT de modifier le libellé
+        $est_reserve = (int)$creneau['est_reserve'] === 1;
+        
+        // Ajouter un message si réservé
+        if ($est_reserve) {
+            $creneau['libelle'] .= ' (Réservé';
+            if ($creneau['equipe_reservee']) {
+                $creneau['libelle'] .= ' - ' . $creneau['equipe_reservee'];
+            }
+            $creneau['libelle'] .= ')';
+        }
+        
+        // Convertir est_reserve en booléen pour JavaScript
+        $creneau['est_reserve'] = $est_reserve;
+        
+        // Nettoyer les champs de debug pour la réponse
+        unset($creneau['date_reservation']);
     }
     
     echo json_encode([
         'success' => true,
-        'creneaux' => $creneaux
+        'creneaux' => $creneaux,
+        'jour_semaine' => $jour_semaine,
+        'date' => $date,
+        'debug' => [
+            'id_terrain' => $id_terrain,
+            'date_recherche' => $date,
+            'jour_semaine' => $jour_semaine,
+            'nb_creneaux' => count($creneaux)
+        ]
     ]);
     
 } catch (PDOException $e) {
     error_log("Erreur get_creneaux_disponibles: " . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Erreur lors de la récupération des créneaux'
+        'message' => 'Erreur lors de la récupération des créneaux: ' . $e->getMessage()
     ]);
 }
-
-

@@ -39,16 +39,40 @@ $pageTitle = "Gestion des Créneaux";
             </div>
 
             <!-- Filtres -->
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <!-- Terrain -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Terrain</label>
-                        <input type="text" id="filterTerrain" list="filterTerrainList" placeholder="Rechercher un terrain..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Terrain</label>
+                        <input type="text" id="filterTerrain" list="filterTerrainList" placeholder="Rechercher un terrain..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                         <input type="hidden" id="filterTerrainId">
                     </div>
+
+                    <!-- NOUVEAU : Période -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Jour de la semaine</label>
-                        <select id="filterJour" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Période</label>
+                        <select id="filterPeriode" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            <option value="current_week">Cette semaine</option>
+                            <option value="next_week">Semaine prochaine</option>
+                            <option value="current_month">Ce mois</option>
+                            <option value="custom">Personnalisée</option>
+                        </select>
+                    </div>
+
+                    <!-- NOUVEAU : Dates personnalisées (masqué par défaut) -->
+                    <div id="customDatesContainer" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Du</label>
+                        <input type="date" id="filterDateDebut" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                    <div id="customDatesContainer2" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Au</label>
+                        <input type="date" id="filterDateFin" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+
+                    <!-- Jour -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Jour de la semaine</label>
+                        <select id="filterJour" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                             <option value="">Tous les jours</option>
                             <option value="Lundi">Lundi</option>
                             <option value="Mardi">Mardi</option>
@@ -59,9 +83,11 @@ $pageTitle = "Gestion des Créneaux";
                             <option value="Dimanche">Dimanche</option>
                         </select>
                     </div>
+
+                    <!-- Disponibilité -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Disponibilité</label>
-                        <select id="filterDisponibilite" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Disponibilité</label>
+                        <select id="filterDisponibilite" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                             <option value="">Tous</option>
                             <option value="1">Disponibles</option>
                             <option value="0">Réservés</option>
@@ -165,7 +191,7 @@ $pageTitle = "Gestion des Créneaux";
     <datalist id="terrainList">
         <!-- Sera rempli dynamiquement par JavaScript -->
     </datalist>
-    
+
     <datalist id="filterTerrainList">
         <!-- Sera rempli dynamiquement par JavaScript -->
     </datalist>
