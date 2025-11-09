@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,23 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
 
         @keyframes slideDown {
             from {
                 transform: translateY(-100%);
                 opacity: 0;
             }
-
             to {
                 transform: translateY(0);
                 opacity: 1;
             }
         }
-
         .message-animate {
             animation: slideDown 0.3s ease-out;
         }
@@ -54,8 +48,16 @@
                 <span class="text-lg font-bold text-gray-900">TerrainBook</span>
             </div>
 
-            <h1 class="text-xl font-bold text-gray-900 mb-1">Bienvenue</h1>
-            <p class="text-xs text-gray-600">Connectez-vous ou créez un compte pour continuer</p>
+            <h1 class="text-xl font-bold text-gray-900 mb-1">
+                <?php 
+                $redirect = $_GET['redirect'] ?? '';
+                $id_terrain = $_GET['id_terrain'] ?? '';
+                echo $redirect === 'reserver' && $id_terrain ? 'Connectez-vous pour réserver' : 'Bienvenue';
+                ?>
+            </h1>
+            <p class="text-xs text-gray-600">
+                <?php echo $redirect === 'reserver' && $id_terrain ? 'Vous devez être connecté pour effectuer une réservation' : 'Connectez-vous ou créez un compte pour continuer'; ?>
+            </p>
         </div>
 
         <!-- Tabs -->
@@ -70,6 +72,9 @@
 
         <!-- Formulaire de connexion -->
         <form id="loginForm">
+            <input type="hidden" id="redirectPage" value="<?php echo htmlspecialchars($redirect); ?>">
+            <input type="hidden" id="terrainId" value="<?php echo htmlspecialchars($id_terrain); ?>">
+            
             <div class="mb-3">
                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
                 <input
@@ -130,14 +135,15 @@
         });
 
         registerTab.addEventListener('click', () => {
-            loginTab.classList.remove('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
-            loginTab.classList.add('text-gray-600', 'hover:text-gray-900');
-            registerTab.classList.remove('text-gray-600', 'hover:text-gray-900');
-            registerTab.classList.add('text-white', 'bg-gradient-to-r', 'from-emerald-600', 'to-green-700', 'shadow-sm');
-
-            setTimeout(() => {
-                window.location.href = 'register.php';
-            }, 200);
+            const redirect = document.getElementById('redirectPage').value;
+            const terrainId = document.getElementById('terrainId').value;
+            let url = 'register.php';
+            
+            if (redirect && terrainId) {
+                url += `?redirect=${redirect}&id_terrain=${terrainId}`;
+            }
+            
+            window.location.href = url;
         });
 
         loginForm.addEventListener('submit', async (e) => {
@@ -150,6 +156,8 @@
 
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const redirect = document.getElementById('redirectPage').value;
+            const terrainId = document.getElementById('terrainId').value;
 
             try {
                 const response = await fetch('../../actions/auth/login.php', {
@@ -159,7 +167,9 @@
                     },
                     body: JSON.stringify({
                         email,
-                        password
+                        password,
+                        redirect: redirect,
+                        terrain_id: terrainId
                     })
                 });
 
@@ -168,7 +178,6 @@
                 if (data.success) {
                     showTopMessage(data.message, 'success');
                     setTimeout(() => {
-                        // Rediriger selon le rôle de l'utilisateur
                         window.location.href = data.redirect;
                     }, 1500);
                 } else {
@@ -215,7 +224,7 @@
 
             setTimeout(() => {
                 hideTopMessage();
-            }, 900);
+            }, 5000);
         }
 
         function hideTopMessage() {
@@ -223,5 +232,4 @@
         }
     </script>
 </body>
-
 </html>

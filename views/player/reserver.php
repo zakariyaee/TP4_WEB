@@ -90,26 +90,7 @@ switch ($terrain['categorie']) {
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm">
-        <nav class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <a href="accueil.php" class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 rounded-xl flex items-center justify-center shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="white" class="w-6 h-6">
-                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2" stroke="white" stroke-width="2" />
-                            <line x1="12" y1="4" x2="12" y2="20" stroke="white" stroke-width="2" />
-                            <circle cx="12" cy="12" r="1.5" fill="white" />
-                        </svg>
-                    </div>
-                    <span class="text-xl font-bold text-gray-900">TerrainBook</span>
-                </a>
-                <div class="flex items-center gap-4">
-                    <span class="text-sm text-gray-600"><?php echo htmlspecialchars($joueur['prenom'] . ' ' . $joueur['nom']); ?></span>
-                    <a href="../../actions/auth/logout.php" class="text-sm text-gray-600 hover:text-emerald-600">Déconnexion</a>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <?php include 'includes/header.php'; ?>
 
     <div class="container mx-auto px-6 py-8 max-w-7xl">
         <!-- Titre et barre de progression -->
