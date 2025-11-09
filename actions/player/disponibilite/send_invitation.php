@@ -65,22 +65,50 @@ try {
         : "Bonjour, je vous invite à rejoindre mon équipe '{$equipe['nom_equipe']}' pour un match le " . 
           date('d/m/Y à H:i', strtotime($disponibilite['date_debut']));
     
-    // Insérer le message
-    $stmt = $pdo->prepare("
-        INSERT INTO message (contenu, email_expediteur, email_destinataire, type_message) 
-        VALUES (:contenu, :expediteur, :destinataire, 'invitation')
-    ");
+    // Démarrer une transaction
+    $pdo->beginTransaction();
     
-    $stmt->execute([
-        ':contenu' => $contenu,
-        ':expediteur' => $_SESSION['user_email'],
-        ':destinataire' => $data['email_destinataire']
-    ]);
-    
-    echo json_encode([
-        'success' => true,
-        'message' => 'Invitation envoyée avec succès'
-    ]);
+    try {
+        // 1. Insérer le message
+        $stmt = $pdo->prepare("
+            INSERT INTO message (contenu, email_expediteur, email_destinataire, type_message) 
+            VALUES (:contenu, :expediteur, :destinataire, 'invitation')
+        ");
+        
+        $stmt->execute([
+            ':contenu' => $contenu,
+            ':expediteur' => $_SESSION['user_email'],
+            ':destinataire' => $data['email_destinataire']
+        ]);
+        
+        $id_message = $pdo->lastInsertId();
+        
+        // 2. Créer la demande de rejoindre (IMPORTANT !)
+        $stmt = $pdo->prepare("
+            INSERT INTO demande_rejoindre (statut, id_message, id_equipe, email_demandeur, date_demande) 
+            VALUES ('en_attente', :id_message, :id_equipe, :email_demandeur, NOW())
+        ");
+        
+        $stmt->execute([
+            ':id_message' => $id_message,
+            ':id_equipe' => $data['id_equipe'],
+            ':email_demandeur' => $data['email_destinataire']  // C'est le destinataire qui devient le demandeur
+        ]);
+        
+        // Valider la transaction
+        $pdo->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Invitation envoyée avec succès',
+            'id_demande' => $pdo->lastInsertId()
+        ]);
+        
+    } catch (Exception $e) {
+        // Annuler la transaction en cas d'erreur
+        $pdo->rollBack();
+        throw $e;
+    }
     
 } catch (Exception $e) {
     echo json_encode([

@@ -12,7 +12,6 @@
                 </div>
                 <div>
                     <span class="text-xl font-bold text-gray-900 block">TerrainBook</span>
-                    
                 </div>
             </a>
 
@@ -44,7 +43,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                     </svg>
                     Invitations
-                   
+                    <span id="header-notification-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">0</span>
                 </a>
 
                 <a href="tournaments.php" class="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors">
@@ -64,7 +63,6 @@
                         </svg>
                     </div>
                     <div>
-                        
                         <div class="text-xs text-gray-500"><?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
                     </div>
                 </div>
@@ -80,3 +78,31 @@
         </div>
     </nav>
 </header>
+
+<script>
+// Mettre à jour le badge de notification dans le header
+function updateHeaderNotificationBadge() {
+    fetch('../../../actions/player/invitation/get_count.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById('header-notification-badge');
+                const count = data.count || 0;
+                
+                if (count > 0) {
+                    badge.textContent = count > 9 ? '9+' : count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        })
+        .catch(error => console.error('Erreur badge:', error));
+}
+
+// Démarrer la synchronisation du badge
+document.addEventListener('DOMContentLoaded', function() {
+    updateHeaderNotificationBadge();
+    setInterval(updateHeaderNotificationBadge, 5000); // Toutes les 5 secondes
+});
+</script>
