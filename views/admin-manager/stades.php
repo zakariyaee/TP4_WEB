@@ -2,7 +2,9 @@
 require_once '../../config/database.php';
 require_once '../../check_auth.php';
 
+checkAdminOrRespo();
 $pageTitle = "Gestion des Terrains";
+$isAdmin = $_SESSION['user_role'] === 'admin';
 ?>
 
 <!DOCTYPE html>
@@ -28,10 +30,12 @@ $pageTitle = "Gestion des Terrains";
                         <h1 class="text-3xl font-bold text-gray-800">Gestion des Terrains</h1>
                         <p class="text-gray-600 mt-2">Gérez tous les terrains de football</p>
                     </div>
+                    <?php if ($isAdmin): ?>
                     <button onclick="openAddModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-lg">
                         <i class="fas fa-plus"></i>
                         <span>Ajouter un terrain</span>
                     </button>
+                    <?php endif; ?>
                 </div>
             </div>
 
