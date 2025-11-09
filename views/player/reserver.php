@@ -456,7 +456,7 @@ switch ($terrain['categorie']) {
                 return;
             }
 
-            fetch(`../../actions/player/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${date}`)
+            fetch(`../../actions/player/reservation/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${date}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -506,7 +506,7 @@ switch ($terrain['categorie']) {
         }
 
         function loadObjets() {
-            fetch('../../actions/player/get_objets.php')
+            fetch('../../actions/player/reservation/get_objets.php')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -748,7 +748,7 @@ switch ($terrain['categorie']) {
 
                 // NOUVEAU: Charger les créneaux pour l'étape 2 et 3
                 if (reservationData.date && reservationData.creneau && <?php echo $etape; ?> >= 2) {
-                    fetch(`../../actions/player/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${reservationData.date}`)
+                    fetch(`../../actions/player/reservation/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${reservationData.date}`)
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -814,7 +814,7 @@ switch ($terrain['categorie']) {
             }
 
             // Charger les créneaux pour obtenir les informations
-            fetch(`../../actions/player/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${reservationData.date}`)
+            fetch(`../../actions/player/reservation/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${reservationData.date}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -865,7 +865,7 @@ switch ($terrain['categorie']) {
 
                         // Charger les objets si pas encore chargés
                         if (objetsData.length === 0) {
-                            return fetch('../../actions/player/get_objets.php')
+                            return fetch('../../actions/player/reservation/get_objets.php')
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
@@ -931,7 +931,7 @@ switch ($terrain['categorie']) {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>En cours...';
 
             // Envoyer la requête
-            fetch('../../actions/player/create_reservation.php', {
+            fetch('../../actions/player/reservation/create_reservation.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
