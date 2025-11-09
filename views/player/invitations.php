@@ -13,8 +13,7 @@ $stmt = $pdo->prepare("
         COUNT(CASE WHEN dr.statut = 'acceptee' THEN 1 END) as acceptees,
         COUNT(CASE WHEN dr.statut = 'refusee' THEN 1 END) as refusees
     FROM demande_rejoindre dr
-    INNER JOIN message m ON dr.id_message = m.id_message
-    WHERE m.email_destinataire = :email
+    WHERE dr.email_demandeur = :email
 ");
 $stmt->execute([':email' => $email_joueur]);
 $stats = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -163,11 +162,124 @@ $tournois = $stmt->fetch(PDO::FETCH_ASSOC);
         let currentTab = 'nouvelles';
         let allInvitations = [];
 
+        // Configuration localStorage
+        const STORAGE_KEY = 'terrainbook_invitations';
+        const CACHE_DURATION = 30000; // 30 secondes
+
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             loadInvitations();
-            startAutoRefresh();
+            
+            // Écouter les changements dans d'autres onglets
+            window.addEventListener('storage', handleStorageChange);
+            
+            // Synchroniser périodiquement avec le serveur
+            setInterval(syncWithServer, 60000); // Vérifier toutes les minutes
         });
+
+        // Gérer les changements de localStorage depuis d'autres onglets
+        function handleStorageChange(e) {
+            if (e.key === STORAGE_KEY) {
+                console.log('Mise à jour détectée depuis un autre onglet');
+                loadFromLocalStorage();
+            }
+        }
+
+        // Charger les données depuis localStorage ou API
+        function loadInvitations() {
+            const cached = getFromLocalStorage();
+            
+            if (cached && !isCacheExpired(cached.timestamp)) {
+                // Utiliser le cache
+                console.log('Chargement depuis localStorage');
+                allInvitations = cached.data.invitations;
+                updateStats(cached.data.stats);
+                renderInvitations();
+            } else {
+                // Charger depuis l'API
+                console.log('Chargement depuis l\'API');
+                fetchFromServer();
+            }
+        }
+
+        // Récupérer depuis localStorage
+        function getFromLocalStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error('Erreur lecture localStorage:', error);
+                return null;
+            }
+        }
+
+        // Sauvegarder dans localStorage
+        function saveToLocalStorage(data) {
+            try {
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheData));
+                console.log('Données sauvegardées dans localStorage');
+            } catch (error) {
+                console.error('Erreur sauvegarde localStorage:', error);
+            }
+        }
+
+        // Vérifier si le cache est expiré
+        function isCacheExpired(timestamp) {
+            return (Date.now() - timestamp) > CACHE_DURATION;
+        }
+
+        // Charger depuis le serveur
+        function fetchFromServer() {
+            fetch('../../../actions/player/invitation/get_invitations.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        allInvitations = data.invitations;
+                        updateStats(data.stats);
+                        saveToLocalStorage(data);
+                        renderInvitations();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur chargement API:', error);
+                    // En cas d'erreur, utiliser le cache même expiré
+                    const cached = getFromLocalStorage();
+                    if (cached) {
+                        allInvitations = cached.data.invitations;
+                        updateStats(cached.data.stats);
+                        renderInvitations();
+                    }
+                });
+        }
+
+        // Synchroniser avec le serveur (en arrière-plan)
+        function syncWithServer() {
+            const cached = getFromLocalStorage();
+            if (!cached || isCacheExpired(cached.timestamp)) {
+                console.log('Synchronisation avec le serveur...');
+                fetchFromServer();
+            }
+        }
+
+        // Charger uniquement depuis localStorage
+        function loadFromLocalStorage() {
+            const cached = getFromLocalStorage();
+            if (cached) {
+                allInvitations = cached.data.invitations;
+                updateStats(cached.data.stats);
+                renderInvitations();
+            }
+        }
+
+        // Invalider le cache (forcer le rechargement)
+        function invalidateCache() {
+            localStorage.removeItem(STORAGE_KEY);
+            fetchFromServer();
+        }
 
         // Changer d'onglet
         function switchTab(tab) {
@@ -178,27 +290,6 @@ $tournois = $stmt->fetch(PDO::FETCH_ASSOC);
             document.getElementById(`tab-${tab}`).classList.add('active');
             
             renderInvitations();
-        }
-
-        // Démarrer la synchronisation automatique toutes les 5 secondes
-        function startAutoRefresh() {
-            setInterval(() => {
-                loadInvitations();
-            }, 5000);
-        }
-
-        // Charger les invitations via AJAX
-        function loadInvitations() {
-            fetch('../../../actions/player/invitation/get_invitations.php')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        allInvitations = data.invitations;
-                        updateStats(data.stats);
-                        renderInvitations();
-                    }
-                })
-                .catch(error => console.error('Erreur chargement:', error));
         }
 
         // Mettre à jour les statistiques
@@ -339,7 +430,7 @@ $tournois = $stmt->fetch(PDO::FETCH_ASSOC);
             .then(data => {
                 if (data.success) {
                     showNotification('success', 'Invitation acceptée avec succès');
-                    loadInvitations();
+                    invalidateCache();
                 } else {
                     showNotification('error', data.message);
                 }
@@ -363,7 +454,7 @@ $tournois = $stmt->fetch(PDO::FETCH_ASSOC);
             .then(data => {
                 if (data.success) {
                     showNotification('success', 'Invitation refusée');
-                    loadInvitations();
+                    invalidateCache();
                 } else {
                     showNotification('error', data.message);
                 }
