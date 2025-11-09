@@ -48,7 +48,7 @@ function redirectToDashboard($role) {
             header('Location: views/admin-manager/dashboard.php');
             break;
         case 'joueur':
-            header('Location: views/player/accueil.php');
+            header('Location: views/player/invitations.php');
             break;
         default:
             header('Location: ../auth/login.php');
