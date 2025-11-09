@@ -1,7 +1,6 @@
 // Variables globales
 let isEditing = false;
 let currentDispoId = null;
-let refreshInterval = null;
 let currentTab = 'tous';
 let allDisponibilites = [];
 let filters = {
@@ -11,31 +10,143 @@ let filters = {
     date: ''
 };
 
+// Configuration localStorage
+const STORAGE_KEY = 'terrainbook_disponibilites';
+const CACHE_DURATION = 30000; // 30 secondes
+
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    // Charger les disponibilités au démarrage
+    // Charger depuis localStorage ou API
     loadDisponibilites();
     
-    // Démarrer la synchronisation automatique toutes les 5 secondes
-    startAutoRefresh();
+    // Écouter les changements dans d'autres onglets
+    window.addEventListener('storage', handleStorageChange);
     
-    // Gérer la soumission du formulaire de disponibilité
+    // Synchroniser périodiquement avec le serveur
+    setInterval(syncWithServer, 60000); // Vérifier toutes les minutes
+    
+    // Gérer les formulaires
     document.getElementById('form-disponibilite').addEventListener('submit', handleSubmit);
-    
-    // Gérer la soumission du formulaire d'invitation
     document.getElementById('form-invitation').addEventListener('submit', handleInvitation);
 });
+
+// Gérer les changements de localStorage depuis d'autres onglets
+function handleStorageChange(e) {
+    if (e.key === STORAGE_KEY) {
+        console.log('Mise à jour détectée depuis un autre onglet');
+        loadFromLocalStorage();
+    }
+}
+
+// Charger les données depuis localStorage ou API
+function loadDisponibilites() {
+    const cached = getFromLocalStorage();
+    
+    if (cached && !isCacheExpired(cached.timestamp)) {
+        // Utiliser le cache
+        console.log('Chargement depuis localStorage');
+        allDisponibilites = cached.data;
+        updateStats(cached.data);
+        renderDisponibilites();
+    } else {
+        // Charger depuis l'API
+        console.log('Chargement depuis l\'API');
+        fetchFromServer();
+    }
+}
+
+// Récupérer depuis localStorage
+function getFromLocalStorage() {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error('Erreur lecture localStorage:', error);
+        return null;
+    }
+}
+
+// Sauvegarder dans localStorage
+function saveToLocalStorage(data) {
+    try {
+        const cacheData = {
+            data: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheData));
+        console.log('Données sauvegardées dans localStorage');
+    } catch (error) {
+        console.error('Erreur sauvegarde localStorage:', error);
+    }
+}
+
+// Vérifier si le cache est expiré
+function isCacheExpired(timestamp) {
+    return (Date.now() - timestamp) > CACHE_DURATION;
+}
+
+// Charger depuis le serveur
+function fetchFromServer() {
+    fetch('../../../actions/player/disponibilite/get_disponibilites.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allDisponibilites = data.disponibilites;
+                updateStats(data.disponibilites);
+                saveToLocalStorage(data.disponibilites);
+                renderDisponibilites();
+            }
+        })
+        .catch(error => {
+            console.error('Erreur chargement API:', error);
+            // En cas d'erreur, utiliser le cache même expiré
+            const cached = getFromLocalStorage();
+            if (cached) {
+                allDisponibilites = cached.data;
+                renderDisponibilites();
+            }
+        });
+}
+
+// Synchroniser avec le serveur (en arrière-plan)
+function syncWithServer() {
+    const cached = getFromLocalStorage();
+    if (!cached || isCacheExpired(cached.timestamp)) {
+        console.log('Synchronisation avec le serveur...');
+        fetchFromServer();
+    }
+}
+
+// Charger uniquement depuis localStorage
+function loadFromLocalStorage() {
+    const cached = getFromLocalStorage();
+    if (cached) {
+        allDisponibilites = cached.data;
+        updateStats(cached.data);
+        renderDisponibilites();
+    }
+}
+
+// Mettre à jour les statistiques
+function updateStats(disponibilites) {
+    const total = disponibilites.length;
+    document.getElementById('total-disponibilites').textContent = total;
+}
+
+// Invalider le cache (forcer le rechargement)
+function invalidateCache() {
+    localStorage.removeItem(STORAGE_KEY);
+    fetchFromServer();
+}
 
 // Changer d'onglet
 function switchTab(tab) {
     currentTab = tab;
     
-    // Mettre à jour les boutons
     document.getElementById('tab-tous').classList.remove('active');
     document.getElementById('tab-mes').classList.remove('active');
     document.getElementById(`tab-${tab}`).classList.add('active');
     
-    // Afficher/masquer le bouton ajouter
     if (tab === 'mes') {
         document.getElementById('btn-add-container').classList.remove('hidden');
         document.getElementById('list-title').textContent = 'Mes disponibilités';
@@ -44,7 +155,6 @@ function switchTab(tab) {
         document.getElementById('list-title').textContent = 'Tous les joueurs disponibles';
     }
     
-    // Recharger les disponibilités
     renderDisponibilites();
 }
 
@@ -58,44 +168,13 @@ function applyFilters() {
     renderDisponibilites();
 }
 
-// Démarrer la synchronisation automatique
-function startAutoRefresh() {
-    refreshInterval = setInterval(() => {
-        loadDisponibilites();
-    }, 10000);
-}
-
-// Arrêter la synchronisation
-function stopAutoRefresh() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-        refreshInterval = null;
-    }
-}
-
-// Charger les disponibilités via AJAX
-function loadDisponibilites() {
-    fetch('../../../actions/player/disponibilite/get_disponibilites.php')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                allDisponibilites = data.disponibilites;
-                document.getElementById('total-disponibilites').textContent = data.total || 0;
-                renderDisponibilites();
-            }
-        })
-        .catch(error => console.error('Erreur lors du chargement:', error));
-}
-
 // Afficher les disponibilités
 function renderDisponibilites() {
     let filteredDispos = allDisponibilites.filter(dispo => {
-        // Filtrer par onglet
         if (currentTab === 'mes' && dispo.email_joueur !== currentUserEmail) {
             return false;
         }
         
-        // Appliquer les filtres
         if (filters.position && dispo.position !== filters.position) return false;
         if (filters.niveau && dispo.niveau !== filters.niveau) return false;
         if (filters.ville && dispo.ville !== filters.ville) return false;
@@ -190,7 +269,6 @@ function createDispoHTML(dispo) {
 
                 <div class="flex items-center gap-3 ml-4">
                     ${isMyDispo ? `
-                        <!-- Mes disponibilités -->
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-gray-600">
                                 ${dispo.statut === 'actif' ? 'Actif' : 'Inactif'}
@@ -218,7 +296,6 @@ function createDispoHTML(dispo) {
                             <i class="fas fa-trash"></i>
                         </button>
                     ` : `
-                        <!-- Autres joueurs -->
                         <button onclick="openInvitationModal(${dispo.id_disponibilite}, '${dispo.email_joueur}', '${dispo.nom_joueur} ${dispo.prenom_joueur}')"
                                 class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center gap-2">
                             <i class="fas fa-paper-plane"></i>
@@ -231,7 +308,7 @@ function createDispoHTML(dispo) {
     `;
 }
 
-// Ouvrir le modal de disponibilité
+// Ouvrir/Fermer modals
 function openModal() {
     isEditing = false;
     currentDispoId = null;
@@ -239,19 +316,15 @@ function openModal() {
     document.getElementById('form-disponibilite').reset();
     document.getElementById('id_disponibilite').value = '';
     document.getElementById('modal-disponibilite').classList.remove('hidden');
-    stopAutoRefresh();
 }
 
-// Fermer le modal de disponibilité
 function closeModal() {
     document.getElementById('modal-disponibilite').classList.add('hidden');
     document.getElementById('form-disponibilite').reset();
     isEditing = false;
     currentDispoId = null;
-    startAutoRefresh();
 }
 
-// Ouvrir le modal d'invitation
 function openInvitationModal(idDispo, emailJoueur, nomJoueur) {
     if (mesEquipes.length === 0) {
         showNotification('error', 'Vous devez d\'abord créer une équipe pour inviter un joueur');
@@ -261,14 +334,11 @@ function openInvitationModal(idDispo, emailJoueur, nomJoueur) {
     document.getElementById('inv_id_disponibilite').value = idDispo;
     document.getElementById('inv_email_joueur').value = emailJoueur;
     document.getElementById('modal-invitation').classList.remove('hidden');
-    stopAutoRefresh();
 }
 
-// Fermer le modal d'invitation
 function closeInvitationModal() {
     document.getElementById('modal-invitation').classList.add('hidden');
     document.getElementById('form-invitation').reset();
-    startAutoRefresh();
 }
 
 // Gérer la soumission du formulaire de disponibilité
@@ -278,7 +348,6 @@ function handleSubmit(e) {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     
-    // Combiner date et heure
     data.date_debut = `${data.date_debut} ${data.heure_debut}`;
     data.date_fin = `${data.date_debut.split(' ')[0]} ${data.heure_fin}`;
     
@@ -299,7 +368,7 @@ function handleSubmit(e) {
         if (result.success) {
             showNotification('success', result.message);
             closeModal();
-            loadDisponibilites();
+            invalidateCache(); // Forcer le rechargement depuis le serveur
         } else {
             showNotification('error', result.message);
         }
@@ -310,7 +379,7 @@ function handleSubmit(e) {
     });
 }
 
-// Gérer l'envoi d'invitation
+// Gérer l'envoi d'invitation (AJAX, pas email)
 function handleInvitation(e) {
     e.preventDefault();
     
@@ -332,7 +401,6 @@ function handleInvitation(e) {
             showNotification('success', 'Invitation envoyée avec succès');
             closeInvitationModal();
             
-            // Incrémenter le compteur
             const counter = document.getElementById('invitations-count');
             counter.textContent = parseInt(counter.textContent) + 1;
         } else {
@@ -349,7 +417,6 @@ function handleInvitation(e) {
 function editDisponibilite(id) {
     isEditing = true;
     currentDispoId = id;
-    stopAutoRefresh();
     
     fetch(`../../../actions/player/disponibilite/get_disponibilite.php?id=${id}`)
         .then(response => response.json())
@@ -392,7 +459,7 @@ function toggleStatut(id, isActive) {
     .then(result => {
         if (result.success) {
             showNotification('success', `Disponibilité ${isActive ? 'activée' : 'désactivée'}`);
-            loadDisponibilites();
+            invalidateCache();
         } else {
             showNotification('error', result.message);
             const checkbox = document.getElementById(`toggle-${id}`);
@@ -420,7 +487,7 @@ function deleteDisponibilite(id) {
     .then(result => {
         if (result.success) {
             showNotification('success', 'Disponibilité supprimée');
-            loadDisponibilites();
+            invalidateCache();
         } else {
             showNotification('error', result.message);
         }
@@ -456,8 +523,3 @@ function showNotification(type, message) {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
-
-// Nettoyer l'intervalle
-window.addEventListener('beforeunload', () => {
-    stopAutoRefresh();
-});

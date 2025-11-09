@@ -122,10 +122,10 @@ $terrains = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="bg-white rounded-xl shadow-md mb-6">
             <div class="border-b border-gray-200 px-6">
                 <div class="flex gap-4">
-                    <button onclick="switchTab('tous')" id="tab-tous" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 active">
+                    <button onclick="switchTab('tous')" id="tab-tous" class="tab-button px-6 py-4 font-medium text-gray-700  border-b-2 border-transparent hover:border-emerald-600 active">
                         <i class="fas fa-users mr-2"></i>Tous les joueurs
                     </button>
-                    <button onclick="switchTab('mes')" id="tab-mes" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600">
+                    <button onclick="switchTab('mes')" id="tab-mes" class="tab-button px-6 py-4 font-medium text-gray-700  border-b-2 border-transparent hover:border-emerald-600">
                         <i class="fas fa-user mr-2"></i>Mes disponibilités
                     </button>
                 </div>
