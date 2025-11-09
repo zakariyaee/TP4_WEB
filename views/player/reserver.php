@@ -596,9 +596,18 @@ switch ($terrain['categorie']) {
             let heures = 0;
             let prixTerrain = 0;
 
+            // MODIFIÉ: Essayer d'abord avec le select, puis avec les données sauvegardées
             const creneauSelect = document.getElementById('creneau_horaire');
+            let creneauId = null;
+
             if (creneauSelect && creneauSelect.value) {
-                const creneau = creneauxData.find(c => c.id_creneaux == creneauSelect.value);
+                creneauId = creneauSelect.value;
+            } else if (reservationData.creneau) {
+                creneauId = reservationData.creneau;
+            }
+
+            if (creneauId && creneauxData.length > 0) {
+                const creneau = creneauxData.find(c => c.id_creneaux == creneauId);
                 if (creneau) {
                     const [h1, m1] = creneau.heure_debut.split(':').map(Number);
                     const [h2, m2] = creneau.heure_fin.split(':').map(Number);
@@ -610,8 +619,18 @@ switch ($terrain['categorie']) {
             // Calculer le prix des objets
             let prixObjets = 0;
             const objetsContainer = document.getElementById('cost_objets_container');
+
             if (objetsContainer) {
                 objetsContainer.innerHTML = '';
+
+                // Ajouter le prix du terrain comme premier élément
+                if (heures > 0) {
+                    const divTerrain = document.createElement('div');
+                    divTerrain.className = 'flex justify-between py-1';
+                    objetsContainer.appendChild(divTerrain);
+                }
+
+                // Ajouter les objets sélectionnés
                 selectedObjets.forEach(objetId => {
                     const objet = objetsData.find(o => parseInt(o.id_object) === objetId);
                     if (objet) {
@@ -619,9 +638,9 @@ switch ($terrain['categorie']) {
                         const div = document.createElement('div');
                         div.className = 'flex justify-between py-1';
                         div.innerHTML = `
-                        <span class="text-gray-600">${objet.nom_objet}</span>
-                        <span class="font-semibold">+${parseFloat(objet.prix).toFixed(2)} DH</span>
-                    `;
+                    <span class="text-gray-600">${objet.nom_objet}</span>
+                    <span class="font-semibold">+${parseFloat(objet.prix).toFixed(2)} DH</span>
+                `;
                         objetsContainer.appendChild(div);
                     }
                 });
@@ -727,6 +746,19 @@ switch ($terrain['categorie']) {
                     loadCreneaux();
                 }
 
+                // NOUVEAU: Charger les créneaux pour l'étape 2 et 3
+                if (reservationData.date && reservationData.creneau && <?php echo $etape; ?> >= 2) {
+                    fetch(`../../actions/player/get_creneaux_disponibles.php?id_terrain=${idTerrain}&date=${reservationData.date}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                creneauxData = data.creneaux;
+                                updateCostSummary();
+                            }
+                        })
+                        .catch(error => console.error('Erreur:', error));
+                }
+
                 if (document.getElementById('id_equipe')) {
                     if (reservationData.id_equipe === 'nouvelle' && reservationData.nouvelle_equipe) {
                         document.getElementById('id_equipe').value = 'nouvelle';
@@ -737,7 +769,7 @@ switch ($terrain['categorie']) {
                     }
                 }
 
-                // Restaurer l'équipe adversaire (NOUVEAU)
+                // Restaurer l'équipe adversaire
                 if (document.getElementById('id_equipe_adverse') && reservationData.id_equipe_adverse) {
                     document.getElementById('id_equipe_adverse').value = reservationData.id_equipe_adverse;
                 }
@@ -766,8 +798,6 @@ switch ($terrain['categorie']) {
             if (<?php echo $etape; ?> === 3) {
                 loadConfirmationData();
             }
-
-            updateCostSummary();
         }
 
         function saveReservationData() {
@@ -914,10 +944,8 @@ switch ($terrain['categorie']) {
                     if (result.success) {
                         // Nettoyer le localStorage
                         localStorage.removeItem('reservation_data');
-                        // Afficher un message de succès
-                        alert('Réservation créée avec succès!\n\nTotal: ' + result.prix_total.toFixed(2) + ' DH\nRéférence: #' + result.id_reservation);
-                        // Rediriger vers la page de mes réservations
-                        window.location.href = 'mes-reservations.php';
+                        // Rediriger directement sans message
+                        window.location.href = 'my-reservations.php';
                     } else {
                         alert('Erreur: ' + result.message);
                         btn.disabled = false;
