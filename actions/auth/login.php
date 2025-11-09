@@ -58,20 +58,32 @@ try {
     $_SESSION['user_role'] = $user['role'];
     $_SESSION['logged_in'] = true;
 
-    // Déterminer l'URL de redirection selon le rôle
+    // Déterminer l'URL de redirection
     $redirectUrl = '';
-    switch ($user['role']) {
-        case 'admin':
-            $redirectUrl = '../admin-manager/dashboard.php';
-            break;
-        case 'responsable':
-            $redirectUrl = '../admin-manager/dashboard.php';
-            break;
-        case 'joueur':
-            $redirectUrl = '../player/accueil.php';
-            break;
-        default:
-            $redirectUrl = '../index.php';
+    
+    // Si redirection vers réservation avec ID terrain (prioritaire)
+    if (isset($data['redirect']) && $data['redirect'] === 'reserver' && !empty($data['terrain_id'])) {
+        if ($user['role'] === 'joueur') {
+            $redirectUrl = '../player/reserver.php?id_terrain=' . intval($data['terrain_id']);
+        } else {
+            // Si ce n'est pas un joueur, rediriger vers la liste des terrains
+            $redirectUrl = '../player/stades.php';
+        }
+    } else {
+        // Redirection normale selon le rôle
+        switch ($user['role']) {
+            case 'admin':
+                $redirectUrl = '../admin-manager/dashboard.php';
+                break;
+            case 'responsable':
+                $redirectUrl = '../admin-manager/dashboard.php';
+                break;
+            case 'joueur':
+                $redirectUrl = '../player/reserver.php';
+                break;
+            default:
+                $redirectUrl = '../../index.php';
+        }
     }
 
     echo json_encode([
@@ -89,4 +101,3 @@ try {
     error_log("Erreur login: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erreur de connexion. Veuillez réessayer.']);
 }
-?>

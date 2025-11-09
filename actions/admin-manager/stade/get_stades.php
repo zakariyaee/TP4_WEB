@@ -1,5 +1,4 @@
 <?php
-// actions/admin-respo/get_terrains.php
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
 
@@ -12,6 +11,7 @@ try {
     $categorie = $_GET['categorie'] ?? '';
     $disponibilite = $_GET['disponibilite'] ?? '';
     $responsable = $_GET['responsable'] ?? '';
+    $ville = isset($_GET['ville']) ? trim($_GET['ville']) : '';
     
     $sql = "SELECT t.*, CONCAT(u.nom, ' ', u.prenom) as responsable_nom, u.email as responsable_email
             FROM terrain t
@@ -41,6 +41,11 @@ try {
         $params[':disponibilite'] = $disponibilite;
     }
     
+    if (!empty($ville)) {
+        $sql .= " AND t.ville = :ville";
+        $params[':ville'] = $ville;
+    }
+
     // Les responsables ne peuvent pas filtrer par un autre responsable
     if (!empty($responsable) && $_SESSION['user_role'] === 'admin') {
         $sql .= " AND t.id_responsable = :responsable";

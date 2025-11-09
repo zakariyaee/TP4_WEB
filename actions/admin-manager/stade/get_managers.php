@@ -1,5 +1,5 @@
 <?php
-// actions/admin-respo/get_responsables.php
+// actions/admin-manager/get_managers.php
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
 
@@ -9,13 +9,17 @@ header('Content-Type: application/json');
 
 try {
     // Seul l'admin peut voir tous les responsables
-    $sql = "SELECT email, nom, prenom FROM utilisateur WHERE role = 'responsable' AND statut_compte = 'actif'";
+    $sql = "SELECT email, nom, prenom, ville FROM utilisateur WHERE role = 'responsable' AND statut_compte = 'actif'";
     $params = [];
+    $ville = isset($_GET['ville']) ? trim($_GET['ville']) : '';
     
     if ($_SESSION['user_role'] === 'responsable') {
         // Un responsable ne peut voir que lui-même
         $sql .= " AND email = :email";
         $params[':email'] = $_SESSION['user_email'];
+    } elseif (!empty($ville)) {
+        $sql .= " AND ville = :ville";
+        $params[':ville'] = $ville;
     }
     
     $sql .= " ORDER BY nom, prenom";

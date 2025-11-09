@@ -1,3 +1,6 @@
+<?php
+include 'actions/admin-manager/data_index.php';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -77,34 +80,32 @@
                     </h1>
 
                     <p class="text-base text-gray-600 leading-relaxed mb-8">
-                        Accédez à plus de 150 terrains de qualité, réservez en temps réel et gérez vos équipes simplement. La solution complète pour vos matchs de football.
+                        Accédez à <?php echo number_format($totalTerrains); ?> terrains de qualité, réservez en temps réel et gérez vos équipes simplement. La solution complète pour vos matchs de football.
                     </p>
 
                     <div class="flex items-center gap-3 mb-12">
-                        <a href="auth/register.php" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold text-sm hover:shadow-lg smooth-hover">
+                        <a href="views/auth/register.php" class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold text-sm hover:shadow-lg smooth-hover">
                             Commencer gratuitement
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
                         </a>
-                        <a href="#terrains" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold text-sm hover:border-gray-300 smooth-hover">
+                        <a href="views/player/stades.php" class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold text-sm hover:border-gray-300 smooth-hover">
                             Voir les terrains
                         </a>
                     </div>
 
                     <!-- Stats raffinées -->
-                    <div class="grid grid-cols-3 gap-6 pt-8 border-t border-gray-100">
+                    <div class="grid grid-cols-2 gap-6 pt-8 border-t border-gray-100">
                         <div>
-                            <div class="text-3xl font-bold text-gray-900 mb-0.5">150+</div>
+                            <div class="text-3xl font-bold text-gray-900 mb-0.5"><?php echo number_format($totalTerrains); ?><?php if ($totalTerrains >= 100) echo '+'; ?></div>
                             <div class="text-xs text-gray-500 font-medium uppercase tracking-wider">Terrains</div>
+                            <div class="text-xs text-gray-400 mt-1"><?php echo $totalTerrainsDisponibles; ?> disponibles</div>
                         </div>
                         <div class="border-l border-gray-100 pl-6">
-                            <div class="text-3xl font-bold text-gray-900 mb-0.5">5K+</div>
+                            <div class="text-3xl font-bold text-gray-900 mb-0.5"><?php echo $totalUsers >= 1000 ? number_format($totalUsers / 1000, 1) . 'K+' : number_format($totalUsers) . '+'; ?></div>
                             <div class="text-xs text-gray-500 font-medium uppercase tracking-wider">Utilisateurs</div>
-                        </div>
-                        <div class="border-l border-gray-100 pl-6">
-                            <div class="text-3xl font-bold text-gray-900 mb-0.5">98%</div>
-                            <div class="text-xs text-gray-500 font-medium uppercase tracking-wider">Satisfaction</div>
+                            <div class="text-xs text-gray-400 mt-1">Joueurs actifs</div>
                         </div>
                     </div>
                 </div>
@@ -192,129 +193,84 @@
             </div>
 
             <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                <!-- Mini Foot -->
-                <div class="group bg-white border border-gray-100 rounded-2xl overflow-hidden smooth-hover hover:shadow-xl">
-                    <div class="relative h-52 overflow-hidden">
-                        <img src="https://images.pexels.com/photos/1171084/pexels-photo-1171084.jpeg"
-                            alt="Mini Foot"
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/20 to-transparent"></div>
-                        <div class="absolute top-4 right-4">
-                            <div class="bg-white/95 backdrop-blur-sm text-blue-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
-                                4 disponibles
-                            </div>
-                        </div>
-                        <div class="absolute bottom-0 left-0 right-0 p-5">
-                            <h3 class="text-2xl font-bold text-white mb-1">Mini Foot</h3>
-                            <p class="text-sm text-gray-200 font-medium">Idéal petits groupes</p>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100">
-                            <div>
-                                <div class="text-xs text-gray-500 font-medium mb-1">Dimensions</div>
-                                <div class="text-base font-bold text-gray-900">20×12m</div>
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500 font-medium mb-1">Capacité</div>
-                                <div class="text-base font-bold text-gray-900">5 vs 5</div>
-                            </div>
-                        </div>
-                        <div class="mb-5">
-                            <div class="text-xs text-gray-500 font-medium mb-1.5">Tarif horaire</div>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">30DH - 40DH</span>
-                                <span class="text-xs text-gray-400">/heure</span>
-                            </div>
-                        </div>
-                        <a href="auth/register.php" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
-                            Voir les terrains
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Terrain Moyen (Featured) -->
-                <div class="group bg-white border-2 border-green-200 rounded-2xl overflow-hidden smooth-hover hover:shadow-xl relative">
+                <?php 
+                $categoryImages = [
+                    'Mini Foot' => 'https://images.pexels.com/photos/1171084/pexels-photo-1171084.jpeg',
+                    'Terrain Moyen' => 'https://images.pexels.com/photos/186239/pexels-photo-186239.jpeg',
+                    'Grand Terrain' => 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=800&h=400&fit=crop'
+                ];
+                $categoryColors = [
+                    'Mini Foot' => 'text-blue-600',
+                    'Terrain Moyen' => 'text-green-600',
+                    'Grand Terrain' => 'text-purple-600'
+                ];
+                $featured = 'Terrain Moyen'; // Catégorie featured
+                $index = 0;
+                foreach ($categories as $categorie): 
+                    $data = $terrainsByCategory[$categorie] ?? [
+                        'disponibles' => 0,
+                        'prix_min' => 0,
+                        'prix_max' => 0,
+                        'description' => '',
+                        'dimensions' => '',
+                        'capacite' => ''
+                    ];
+                    $isFeatured = $categorie === $featured;
+                ?>
+                <div class="group bg-white <?php echo $isFeatured ? 'border-2 border-green-200' : 'border border-gray-100'; ?> rounded-2xl overflow-hidden smooth-hover hover:shadow-xl relative">
+                    <?php if ($isFeatured): ?>
                     <div class="absolute -top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-green-700"></div>
+                    <?php endif; ?>
                     <div class="relative h-52 overflow-hidden">
-                        <img src="https://images.pexels.com/photos/186239/pexels-photo-186239.jpeg"
-                            alt="Terrain Moyen"
+                        <img src="<?php echo htmlspecialchars($categoryImages[$categorie] ?? 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800'); ?>"
+                            alt="<?php echo htmlspecialchars($categorie); ?>"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/20 to-transparent"></div>
                         <div class="absolute top-4 right-4">
-                            <div class="bg-white/95 backdrop-blur-sm text-green-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
-                                3 disponibles
+                            <div class="bg-white/95 backdrop-blur-sm <?php echo $categoryColors[$categorie] ?? 'text-gray-600'; ?> px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
+                                <?php echo $data['disponibles']; ?> <?php echo $data['disponibles'] <= 1 ? 'disponible' : 'disponibles'; ?>
                             </div>
                         </div>
                         <div class="absolute bottom-0 left-0 right-0 p-5">
-                            <h3 class="text-2xl font-bold text-white mb-1">Terrain Moyen</h3>
-                            <p class="text-sm text-gray-200 font-medium">Matchs amicaux</p>
+                            <h3 class="text-2xl font-bold text-white mb-1"><?php echo htmlspecialchars($categorie); ?></h3>
+                            <p class="text-sm text-gray-200 font-medium"><?php echo htmlspecialchars($data['description']); ?></p>
                         </div>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100">
                             <div>
                                 <div class="text-xs text-gray-500 font-medium mb-1">Dimensions</div>
-                                <div class="text-base font-bold text-gray-900">35×20m</div>
+                                <div class="text-base font-bold text-gray-900"><?php echo htmlspecialchars($data['dimensions']); ?></div>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500 font-medium mb-1">Capacité</div>
-                                <div class="text-base font-bold text-gray-900">7 vs 7</div>
+                                <div class="text-base font-bold text-gray-900"><?php echo htmlspecialchars($data['capacite']); ?></div>
                             </div>
                         </div>
                         <div class="mb-5">
                             <div class="text-xs text-gray-500 font-medium mb-1.5">Tarif horaire</div>
                             <div class="flex items-baseline gap-1">
-                                <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">50DH - 70DH</span>
+                                <?php if ($data['prix_min'] > 0 && $data['prix_max'] > 0): ?>
+                                    <?php if ($data['prix_min'] == $data['prix_max']): ?>
+                                        <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent"><?php echo number_format($data['prix_min'], 0); ?>DH</span>
+                                    <?php else: ?>
+                                        <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent"><?php echo number_format($data['prix_min'], 0); ?>DH - <?php echo number_format($data['prix_max'], 0); ?>DH</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">Sur demande</span>
+                                <?php endif; ?>
                                 <span class="text-xs text-gray-400">/heure</span>
                             </div>
                         </div>
-                        <a href="auth/register.php" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
+                        <a href="views/player/stades.php?categorie=<?php echo urlencode($categorie); ?>" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
                             Voir les terrains
                         </a>
                     </div>
                 </div>
-
-                <!-- Grand Terrain -->
-                <div class="group bg-white border border-gray-100 rounded-2xl overflow-hidden smooth-hover hover:shadow-xl">
-                    <div class="relative h-52 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=800&h=400&fit=crop"
-                            alt="Grand Terrain"
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/20 to-transparent"></div>
-                        <div class="absolute top-4 right-4">
-                            <div class="bg-white/95 backdrop-blur-sm text-purple-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm">
-                                2 disponibles
-                            </div>
-                        </div>
-                        <div class="absolute bottom-0 left-0 right-0 p-5">
-                            <h3 class="text-2xl font-bold text-white mb-1">Grand Terrain</h3>
-                            <p class="text-sm text-gray-200 font-medium">Compétitions pro</p>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100">
-                            <div>
-                                <div class="text-xs text-gray-500 font-medium mb-1">Dimensions</div>
-                                <div class="text-base font-bold text-gray-900">50×30m</div>
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500 font-medium mb-1">Capacité</div>
-                                <div class="text-base font-bold text-gray-900">11 vs 11</div>
-                            </div>
-                        </div>
-                        <div class="mb-5">
-                            <div class="text-xs text-gray-500 font-medium mb-1.5">Tarif horaire</div>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">80DH - 120DH</span>
-                                <span class="text-xs text-gray-400">/heure</span>
-                            </div>
-                        </div>
-                        <a href="auth/register.php" class="block w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white text-center py-2.5 rounded-lg font-semibold text-sm hover:shadow-md transition-shadow">
-                            Voir les terrains
-                        </a>
-                    </div>
-                </div>
+                <?php 
+                $index++;
+                endforeach; 
+                ?>
             </div>
         </div>
     </section>
@@ -331,9 +287,9 @@
                 Commencez dès maintenant
             </h2>
             <p class="text-lg text-green-50 mb-9 max-w-xl mx-auto">
-                Rejoignez notre communauté de plus de 5000 joueurs passionnés
+                Rejoignez notre communauté de plus de <?php echo number_format($totalUsers); ?> joueurs passionnés
             </p>
-            <a href="auth/register.php" class="inline-flex items-center gap-2 bg-white text-green-700 px-8 py-3.5 rounded-lg font-semibold hover:shadow-xl smooth-hover">
+            <a href="views/auth/register.php" class="inline-flex items-center gap-2 bg-white text-green-700 px-8 py-3.5 rounded-lg font-semibold hover:shadow-xl smooth-hover">
                 Créer mon compte gratuitement
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />

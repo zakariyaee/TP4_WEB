@@ -43,9 +43,8 @@ $pageTitle = "Gestion des Créneaux";
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Terrain</label>
-                        <select id="filterTerrain" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">Tous les terrains</option>
-                        </select>
+                        <input type="text" id="filterTerrain" list="filterTerrainList" placeholder="Rechercher un terrain..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <input type="hidden" id="filterTerrainId">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Jour de la semaine</label>
@@ -101,9 +100,8 @@ $pageTitle = "Gestion des Créneaux";
 
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Terrain *</label>
-                    <select id="id_terrain" name="id_terrain" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                        <option value="">Sélectionner un terrain...</option>
-                    </select>
+                    <input type="text" id="id_terrain_input" list="terrainList" placeholder="Rechercher un terrain..." required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <input type="hidden" id="id_terrain" name="id_terrain">
                 </div>
 
                 <div>
@@ -163,6 +161,14 @@ $pageTitle = "Gestion des Créneaux";
             </div>
         </div>
     </div>
+
+    <datalist id="terrainList">
+        <!-- Sera rempli dynamiquement par JavaScript -->
+    </datalist>
+    
+    <datalist id="filterTerrainList">
+        <!-- Sera rempli dynamiquement par JavaScript -->
+    </datalist>
 
     <script src="../../assets/js/slots.js"></script>
 </body>
