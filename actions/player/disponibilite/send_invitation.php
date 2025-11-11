@@ -37,14 +37,11 @@ try {
     }
     
     // Récupérer les informations de la disponibilité
-    // Vérifier que la disponibilité existe, est active et appartient au bon utilisateur
     $stmt = $pdo->prepare("
         SELECT d.*, u.nom, u.prenom
         FROM disponibilite d
         JOIN utilisateur u ON d.email_joueur = u.email
         WHERE d.id_disponibilite = :id
-          AND d.statut = 'actif'
-          AND d.date_debut >= NOW()
     ");
     $stmt->execute([':id' => $data['id_disponibilite']]);
     $disponibilite = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -52,16 +49,7 @@ try {
     if (!$disponibilite) {
         echo json_encode([
             'success' => false,
-            'message' => 'Disponibilité introuvable ou non disponible (peut-être désactivée ou expirée)'
-        ]);
-        exit;
-    }
-    
-    // Vérifier que l'utilisateur n'essaie pas de s'envoyer une invitation à lui-même
-    if ($disponibilite['email_joueur'] === $data['email_destinataire']) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Vous ne pouvez pas vous envoyer une invitation à vous-même'
+            'message' => 'Disponibilité introuvable'
         ]);
         exit;
     }

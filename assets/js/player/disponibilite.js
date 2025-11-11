@@ -416,6 +416,14 @@ function handleInvitation(e) {
         if (result.success) {
             showNotification('success', 'Invitation envoyée avec succès');
             closeInvitationModal();
+            
+            // Invalider le cache des invitations envoyées pour que l'invitation apparaisse immédiatement
+            if (typeof Storage !== 'undefined') {
+                // Supprimer le cache des invitations envoyées
+                localStorage.removeItem('terrainbook_sent_invitations');
+                // Envoyer un signal de synchronisation pour les autres onglets
+                localStorage.setItem('sync_sent_invitations', Date.now().toString());
+            }
         } else {
             showNotification('error', result.message);
         }

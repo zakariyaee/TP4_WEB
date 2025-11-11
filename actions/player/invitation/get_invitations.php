@@ -10,6 +10,9 @@ try {
     $email_joueur = $_SESSION['user_email'];
     
     // Récupérer les invitations d'équipes
+    // IMPORTANT: On récupère toutes les invitations reçues par l'utilisateur connecté
+    // La disponibilité est optionnelle (LEFT JOIN) car elle peut ne plus exister ou être désactivée
+    // La disponibilité appartient à l'expéditeur (celui qui envoie l'invitation)
     $stmt = $pdo->prepare("
         SELECT 
             dr.id_demande,
@@ -22,11 +25,46 @@ try {
             u.nom as expediteur_nom,
             u.prenom as expediteur_prenom,
             CONCAT(SUBSTRING(u.nom, 1, 1), SUBSTRING(u.prenom, 1, 1)) as expediteur_initiales,
-            d.date_debut,
-            d.position,
-            d.niveau,
-            DATE_FORMAT(d.date_debut, '%d/%m/%Y') as date_formatted,
-            DATE_FORMAT(d.date_debut, '%H:%i') as heure_formatted,
+            (SELECT d_closest.date_debut
+             FROM disponibilite d_closest
+             WHERE d_closest.email_joueur = m.email_expediteur
+               AND d_closest.statut = 'actif'
+               AND d_closest.date_debut BETWEEN DATE_SUB(m.date_message, INTERVAL 30 DAY) 
+                                            AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
+             ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
+             LIMIT 1) as date_debut,
+            (SELECT d_closest.position
+             FROM disponibilite d_closest
+             WHERE d_closest.email_joueur = m.email_expediteur
+               AND d_closest.statut = 'actif'
+               AND d_closest.date_debut BETWEEN DATE_SUB(m.date_message, INTERVAL 30 DAY) 
+                                            AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
+             ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
+             LIMIT 1) as position,
+            (SELECT d_closest.niveau
+             FROM disponibilite d_closest
+             WHERE d_closest.email_joueur = m.email_expediteur
+               AND d_closest.statut = 'actif'
+               AND d_closest.date_debut BETWEEN DATE_SUB(m.date_message, INTERVAL 30 DAY) 
+                                            AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
+             ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
+             LIMIT 1) as niveau,
+            DATE_FORMAT((SELECT d_closest.date_debut
+                         FROM disponibilite d_closest
+                         WHERE d_closest.email_joueur = m.email_expediteur
+                           AND d_closest.statut = 'actif'
+                           AND d_closest.date_debut BETWEEN DATE_SUB(m.date_message, INTERVAL 30 DAY) 
+                                                        AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
+                         ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
+                         LIMIT 1), '%d/%m/%Y') as date_formatted,
+            DATE_FORMAT((SELECT d_closest.date_debut
+                         FROM disponibilite d_closest
+                         WHERE d_closest.email_joueur = m.email_expediteur
+                           AND d_closest.statut = 'actif'
+                           AND d_closest.date_debut BETWEEN DATE_SUB(m.date_message, INTERVAL 30 DAY) 
+                                                        AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
+                         ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
+                         LIMIT 1), '%H:%i') as heure_formatted,
             DATE_FORMAT(m.date_message, '%d/%m/%Y à %H:%i') as date_message_formatted,
             'equipe' as type,
             NULL as nom_tournoi
@@ -34,10 +72,8 @@ try {
         INNER JOIN message m ON dr.id_message = m.id_message
         INNER JOIN equipe e ON dr.id_equipe = e.id_equipe
         INNER JOIN utilisateur u ON m.email_expediteur = u.email
-        LEFT JOIN disponibilite d ON m.email_destinataire = d.email_joueur 
-            AND d.statut = 'actif' 
-            AND d.date_debut >= NOW()
         WHERE dr.email_demandeur = :email
+          AND m.email_destinataire = :email
         ORDER BY m.date_message DESC
     ");
     $stmt->execute([':email' => $email_joueur]);

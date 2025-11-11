@@ -109,7 +109,7 @@ $email_joueur = $_SESSION['user_email'];
 
         // Configuration localStorage
         const STORAGE_KEY = 'terrainbook_invitations';
-        const CACHE_DURATION = 30000; // 30 secondes
+        const CACHE_DURATION = 10000; // 10 secondes (réduit pour un rafraîchissement plus rapide)
 
         document.addEventListener('DOMContentLoaded', function() {
             loadInvitations();
@@ -120,6 +120,10 @@ $email_joueur = $_SESSION['user_email'];
         function handleStorageChange(e) {
             if (e.key === STORAGE_KEY) {
                 loadFromLocalStorage();
+            } else if (e.key === 'sync_invitations' || e.key === 'sync_sent_invitations') {
+                // Signal de synchronisation : recharger depuis le serveur
+                console.log('Signal de synchronisation reçu, rechargement des invitations...');
+                invalidateCache();
             }
         }
 
