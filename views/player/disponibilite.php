@@ -6,17 +6,6 @@ checkJoueur();
 
 $email_joueur = $_SESSION['user_email'];
 
-// Récupérer les statistiques du joueur connecté
-$stmt = $pdo->prepare("
-    SELECT 
-        COUNT(DISTINCT DATE(date_debut)) as disponibilites_actives,
-        COUNT(DISTINCT CASE WHEN date_debut >= NOW() THEN DATE(date_debut) END) as disponibilites_futures
-    FROM disponibilite 
-    WHERE email_joueur = :email AND statut = 'actif'
-");
-$stmt->execute([':email' => $email_joueur]);
-$stats = $stmt->fetch(PDO::FETCH_ASSOC);
-
 // Récupérer toutes les équipes du joueur
 $stmt = $pdo->prepare("
     SELECT DISTINCT e.id_equipe, e.nom_equipe
@@ -79,53 +68,14 @@ $terrains = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p class="text-gray-600">Consultez les disponibilités et invitez des joueurs à rejoindre votre équipe</p>
         </div>
 
-        <!-- Statistiques -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm mb-1">Mes disponibilités</p>
-                        <p class="text-3xl font-bold text-emerald-600"><?php echo $stats['disponibilites_actives'] ?? 0; ?></p>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-calendar-check text-emerald-600 text-xl"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm mb-1">Joueurs disponibles</p>
-                        <p class="text-3xl font-bold text-blue-600" id="total-disponibilites">0</p>
-                    </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users text-blue-600 text-xl"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm mb-1">Invitations envoyées</p>
-                        <p class="text-3xl font-bold text-purple-600" id="invitations-count">0</p>
-                    </div>
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-paper-plane text-purple-600 text-xl"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Onglets -->
         <div class="bg-white rounded-xl shadow-md mb-6">
             <div class="border-b border-gray-200 px-6">
                 <div class="flex gap-4">
-                    <button onclick="switchTab('tous')" id="tab-tous" class="tab-button px-6 py-4 font-medium text-gray-700  border-b-2 border-transparent hover:border-emerald-600 active">
+                    <button onclick="switchTab('tous')" id="tab-tous" class="tab-button px-6 py-4 font-medium text-gray-700 border-b-2 border-transparent hover:border-emerald-600 active">
                         <i class="fas fa-users mr-2"></i>Tous les joueurs
                     </button>
-                    <button onclick="switchTab('mes')" id="tab-mes" class="tab-button px-6 py-4 font-medium text-gray-700  border-b-2 border-transparent hover:border-emerald-600">
+                    <button onclick="switchTab('mes')" id="tab-mes" class="tab-button px-6 py-4 font-medium text-gray-700 border-b-2 border-transparent hover:border-emerald-600">
                         <i class="fas fa-user mr-2"></i>Mes disponibilités
                     </button>
                 </div>

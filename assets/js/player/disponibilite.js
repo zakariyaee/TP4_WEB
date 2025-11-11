@@ -46,7 +46,6 @@ function loadDisponibilites() {
         // Utiliser le cache
         console.log('Chargement depuis localStorage');
         allDisponibilites = cached.data;
-        updateStats(cached.data);
         renderDisponibilites();
     } else {
         // Charger depuis l'API
@@ -92,7 +91,6 @@ function fetchFromServer() {
         .then(data => {
             if (data.success) {
                 allDisponibilites = data.disponibilites;
-                updateStats(data.disponibilites);
                 saveToLocalStorage(data.disponibilites);
                 renderDisponibilites();
             }
@@ -122,15 +120,8 @@ function loadFromLocalStorage() {
     const cached = getFromLocalStorage();
     if (cached) {
         allDisponibilites = cached.data;
-        updateStats(cached.data);
         renderDisponibilites();
     }
-}
-
-// Mettre à jour les statistiques
-function updateStats(disponibilites) {
-    const total = disponibilites.length;
-    document.getElementById('total-disponibilites').textContent = total;
 }
 
 // Invalider le cache (forcer le rechargement)
@@ -400,9 +391,6 @@ function handleInvitation(e) {
         if (result.success) {
             showNotification('success', 'Invitation envoyée avec succès');
             closeInvitationModal();
-            
-            const counter = document.getElementById('invitations-count');
-            counter.textContent = parseInt(counter.textContent) + 1;
         } else {
             showNotification('error', result.message);
         }
