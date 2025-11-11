@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 
 // Ajustez le chemin selon votre structure de dossiers
-require_once __DIR__ . '/../../../config/database.php';
+require_once '../../config/database.php';
 
 try {
     // Vérifier si l'utilisateur est connecté

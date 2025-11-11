@@ -48,7 +48,7 @@ document.querySelectorAll('button').forEach(button => {
 // ============================================
 function loadStatsReservationUser() {
     const xhrStats = new XMLHttpRequest();
-    const url = '../../actions/admin-manager/player/reservation_Stats_user.php?' + params.toString();
+    const url = '../../actions/player/reservation_Stats_user.php?' + params.toString();
     
     xhrStats.open('GET', url, true);
     xhrStats.withCredentials = true;
@@ -114,7 +114,7 @@ function updateReservationStatsUser(stats) {
 // ============================================
 function fetchUpcomingReservations() {
     const xhrUpcoming = new XMLHttpRequest();
-    const url = '../../actions/admin-manager/player/fetch_upcoming_reservations.php?' + params.toString();
+    const url = '../../actions/player/fetch_upcoming_reservations.php?' + params.toString();
 
     xhrUpcoming.open('GET', url, true);
     xhrUpcoming.withCredentials = true;
@@ -390,7 +390,7 @@ function annulerReservation(id) {
     }
     
     const xhrCancel = new XMLHttpRequest();
-    xhrCancel.open('POST', '../../actions/admin-manager/player/cancel_reservation.php', true);
+    xhrCancel.open('POST', '../../actions/player/cancel_reservation.php', true);
     xhrCancel.setRequestHeader('Content-Type', 'application/json');
     xhrCancel.withCredentials = true;
     

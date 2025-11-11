@@ -2,7 +2,6 @@
 require_once '../../config/database.php';
 $prochaines = $_SESSION['reservations_prochaines'];
 $historique = $_SESSION['reservations_historique'];
-
 // Statistiques rapides
 $nb_prochaines = count($prochaines);
 $nb_confirmees = count(array_filter($prochaines, fn($r) => $r['statut'] === 'confirmee'));
