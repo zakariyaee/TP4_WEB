@@ -212,7 +212,7 @@ $email_joueur = $_SESSION['user_email'];
             renderInvitations();
         }
 
-        // ✅ Met à jour uniquement le badge rouge
+        // Met à jour uniquement le badge rouge
         function updateBadge(count) {
             const badge = document.getElementById('badge-nouvelles');
             badge.textContent = count;
