@@ -35,6 +35,10 @@ function handleStorageChange(e) {
     if (e.key === STORAGE_KEY) {
         console.log('Mise à jour détectée depuis un autre onglet');
         loadFromLocalStorage();
+    } else if (e.key === 'sync_disponibilites') {
+        // Signal de synchronisation : recharger depuis le serveur
+        console.log('Signal de synchronisation reçu, rechargement des disponibilités...');
+        invalidateCache();
     }
 }
 
@@ -162,10 +166,25 @@ function applyFilters() {
 // Afficher les disponibilités
 function renderDisponibilites() {
     let filteredDispos = allDisponibilites.filter(dispo => {
-        if (currentTab === 'mes' && dispo.email_joueur !== currentUserEmail) {
-            return false;
+        // Dans l'onglet "Mes disponibilités", afficher toutes les disponibilités de l'utilisateur
+        if (currentTab === 'mes') {
+            if (dispo.email_joueur !== currentUserEmail) {
+                return false;
+            }
+            // Afficher toutes les disponibilités (actives et inactives) pour l'utilisateur connecté
+        } else {
+            // Dans l'onglet "Tous", ne montrer que les disponibilités actives des autres utilisateurs
+            // (Les disponibilités de l'utilisateur connecté ne devraient pas apparaître ici normalement)
+            if (dispo.email_joueur === currentUserEmail) {
+                return false;
+            }
+            // Le serveur devrait déjà filtrer, mais on double-vérifie côté client
+            if (dispo.statut !== 'actif') {
+                return false;
+            }
         }
         
+        // Appliquer les autres filtres
         if (filters.position && dispo.position !== filters.position) return false;
         if (filters.niveau && dispo.niveau !== filters.niveau) return false;
         if (filters.ville && dispo.ville !== filters.ville) return false;
@@ -204,9 +223,10 @@ function createDispoHTML(dispo) {
     };
 
     const isMyDispo = dispo.email_joueur === currentUserEmail;
+    const isInactive = dispo.statut === 'inactif';
 
     return `
-        <div class="p-6 hover:bg-gray-50 transition-colors fade-in" data-dispo-id="${dispo.id_disponibilite}">
+        <div class="p-6 hover:bg-gray-50 transition-colors fade-in ${isInactive && isMyDispo ? 'opacity-75 bg-gray-50' : ''}" data-dispo-id="${dispo.id_disponibilite}">
             <div class="flex items-start justify-between">
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-3">
@@ -222,7 +242,12 @@ function createDispoHTML(dispo) {
                             </div>
                             <span class="text-gray-300">|</span>
                         ` : ''}
-                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+                        ${isInactive && isMyDispo ? `
+                            <span class="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">
+                                <i class="fas fa-pause-circle mr-1"></i>Inactive
+                            </span>
+                        ` : ''}
+                        <span class="px-3 py-1 ${isInactive && isMyDispo ? 'bg-gray-100 text-gray-500' : 'bg-emerald-100 text-emerald-700'} rounded-full text-sm font-medium">
                             ${dispo.date_formatted}
                         </span>
                         <span class="text-gray-600">
@@ -437,6 +462,10 @@ function editDisponibilite(id) {
 // Toggle statut actif/inactif
 function toggleStatut(id, isActive) {
     const statut = isActive ? 'actif' : 'inactif';
+    const checkbox = document.getElementById(`toggle-${id}`);
+    
+    // Désactiver le toggle pendant la mise à jour
+    if (checkbox) checkbox.disabled = true;
     
     fetch('../../../actions/player/disponibilite/update_statut.php', {
         method: 'POST',
@@ -445,18 +474,37 @@ function toggleStatut(id, isActive) {
     })
     .then(response => response.json())
     .then(result => {
+        if (checkbox) checkbox.disabled = false;
+        
         if (result.success) {
             showNotification('success', `Disponibilité ${isActive ? 'activée' : 'désactivée'}`);
+            
+            // Mettre à jour immédiatement dans le tableau local
+            const dispoIndex = allDisponibilites.findIndex(d => d.id_disponibilite === id);
+            if (dispoIndex !== -1) {
+                allDisponibilites[dispoIndex].statut = statut;
+            }
+            
+            // Recharger depuis le serveur pour s'assurer que les données sont à jour
+            // et que les autres utilisateurs voient le changement
             invalidateCache();
+            
+            // Notifier les autres onglets ouverts (si multi-onglets)
+            if (typeof Storage !== 'undefined') {
+                localStorage.setItem('sync_disponibilites', Date.now().toString());
+            }
         } else {
             showNotification('error', result.message);
-            const checkbox = document.getElementById(`toggle-${id}`);
             if (checkbox) checkbox.checked = !isActive;
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
         showNotification('error', 'Erreur lors de la mise à jour');
+        if (checkbox) {
+            checkbox.disabled = false;
+            checkbox.checked = !isActive;
+        }
     });
 }
 
