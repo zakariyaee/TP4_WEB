@@ -1,5 +1,5 @@
 <?php
-// actions/admin-manager/slot/get_slots.php
+// actions/admin-manager/slot/get_slots.php (VERSION AMÉLIORÉE)
 require_once '../../../config/database.php';
 require_once '../../../check_auth.php';
 
@@ -11,8 +11,11 @@ try {
     $terrain = $_GET['terrain'] ?? '';
     $jour = $_GET['jour'] ?? '';
     $disponibilite = $_GET['disponibilite'] ?? '';
+    
+    // NOUVEAU : Paramètres pour la période
+    $date_debut = $_GET['date_debut'] ?? date('Y-m-d'); // Date de début (par défaut aujourd'hui)
+    $date_fin = $_GET['date_fin'] ?? date('Y-m-d', strtotime('+7 days')); // Date de fin (par défaut +7 jours)
 
-    // Requête principale pour récupérer les créneaux avec leurs informations
     $query = "
         SELECT 
             c.id_creneaux,
@@ -30,6 +33,7 @@ try {
             t.id_responsable,
             r.id_reservation,
             r.date_reservation,
+            DATE(r.date_reservation) as date_reservation_only,
             r.statut as reservation_statut,
             e1.id_equipe,
             e1.nom_equipe as equipe_nom,
@@ -43,15 +47,17 @@ try {
         LEFT JOIN utilisateur u ON t.id_responsable = u.email
         LEFT JOIN reservation r ON c.id_creneaux = r.id_creneau 
             AND r.statut IN ('confirmee', 'en_attente')
-            AND DATE(r.date_reservation) >= CURDATE()
+            AND DATE(r.date_reservation) BETWEEN :date_debut AND :date_fin
         LEFT JOIN equipe e1 ON r.id_equipe = e1.id_equipe
         LEFT JOIN equipe e2 ON r.id_equipe_adverse = e2.id_equipe
         WHERE 1=1
     ";
 
-    $params = [];
+    $params = [
+        ':date_debut' => $date_debut,
+        ':date_fin' => $date_fin
+    ];
 
-    // Si c'est un responsable, ne montrer que les créneaux de ses terrains
     if ($_SESSION['user_role'] === 'responsable') {
         $query .= " AND t.id_responsable = :user_email";
         $params[':user_email'] = $_SESSION['user_email'];
@@ -67,16 +73,6 @@ try {
         $params[':jour'] = $jour;
     }
 
-    if ($disponibilite !== '') {
-        if ($disponibilite == '1') {
-            // Créneaux disponibles (pas de réservation active)
-            $query .= " AND r.id_reservation IS NULL";
-        } else {
-            // Créneaux réservés (avec réservation active)
-            $query .= " AND r.id_reservation IS NOT NULL";
-        }
-    }
-
     $query .= " ORDER BY 
         FIELD(c.jour_semaine, 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'),
         c.heure_debut ASC";
@@ -85,13 +81,13 @@ try {
     $stmt->execute($params);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Formater les données pour une meilleure organisation
+    // Formater les données
     $creneaux = [];
     foreach ($results as $row) {
         $creneau = [
             'id_creneaux' => $row['id_creneaux'],
             'jour_semaine' => $row['jour_semaine'],
-            'heure_debut' => substr($row['heure_debut'], 0, 5), // Format HH:MM
+            'heure_debut' => substr($row['heure_debut'], 0, 5),
             'heure_fin' => substr($row['heure_fin'], 0, 5),
             'id_terrain' => $row['id_terrain'],
             'nom_terrain' => $row['nom_terrain'],
@@ -108,11 +104,11 @@ try {
             ]
         ];
 
-        // Ajouter les informations de réservation si le créneau est réservé
         if ($row['id_reservation']) {
             $creneau['reservation_info'] = [
                 'id_reservation' => $row['id_reservation'],
                 'date_reservation' => $row['date_reservation'],
+                'date_reservation_only' => $row['date_reservation_only'], // NOUVEAU
                 'statut' => $row['reservation_statut'],
                 'equipe_id' => $row['id_equipe'],
                 'equipe_nom' => $row['equipe_nom'],
@@ -135,7 +131,9 @@ try {
         'filters' => [
             'terrain' => $terrain,
             'jour' => $jour,
-            'disponibilite' => $disponibilite
+            'disponibilite' => $disponibilite,
+            'date_debut' => $date_debut,
+            'date_fin' => $date_fin
         ],
         'user_role' => $_SESSION['user_role']
     ], JSON_UNESCAPED_UNICODE);
@@ -148,4 +146,3 @@ try {
         'error' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
-?>
