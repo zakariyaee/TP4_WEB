@@ -8,34 +8,23 @@ $email_joueur = $_SESSION['user_email'];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mes Invitations - TerrainBook</title>
+    <title>Invitations Envoyées - TerrainBook</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
 
         .fade-in {
             animation: fadeIn 0.3s ease-in;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .tab-button.active {
@@ -44,53 +33,85 @@ $email_joueur = $_SESSION['user_email'];
             color: #10b981;
         }
 
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
+        .status-badge {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
+            gap: 0.5rem;
         }
     </style>
 </head>
-
 <body class="bg-gray-50">
     <?php include 'includes/header.php'; ?>
 
     <div class="container mx-auto px-6 py-8 max-w-7xl">
         <!-- En-tête -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Mes Invitations</h1>
-            <p class="text-gray-600">Gérez les invitations reçues des équipes</p>
+            <div class="flex items-center gap-3 mb-2">
+                <a href="invitations.php" class="text-emerald-600 hover:text-emerald-700">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900">Invitations Envoyées</h1>
+            </div>
+            <p class="text-gray-600">Suivez le statut de vos invitations envoyées aux autres joueurs</p>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">En attente</p>
+                        <p class="text-3xl font-bold text-orange-600" id="stat-en-attente">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clock text-orange-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Acceptées</p>
+                        <p class="text-3xl font-bold text-emerald-600" id="stat-acceptees">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-emerald-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Refusées</p>
+                        <p class="text-3xl font-bold text-red-600" id="stat-refusees">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times-circle text-red-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Onglets -->
         <div class="bg-white rounded-xl shadow-md mb-6">
             <div class="border-b border-gray-200 px-6">
                 <div class="flex gap-4">
-                    <button onclick="switchTab('nouvelles')" id="tab-nouvelles" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 active relative">
-                        <i class="fas fa-envelope mr-2"></i>Nouvelles invitations
-                        <span class="notification-badge" id="badge-nouvelles">0</span>
+                    <button onclick="switchTab('toutes')" id="tab-toutes" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 active">
+                        <i class="fas fa-list mr-2"></i>Toutes
                     </button>
-                    <button onclick="switchTab('historique')" id="tab-historique" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600">
-                        <i class="fas fa-history mr-2"></i>Historique
+                    <button onclick="switchTab('en_attente')" id="tab-en_attente" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600">
+                        <i class="fas fa-clock mr-2"></i>En attente
+                    </button>
+                    <button onclick="switchTab('acceptees')" id="tab-acceptees" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600">
+                        <i class="fas fa-check-circle mr-2"></i>Acceptées
+                    </button>
+                    <button onclick="switchTab('refusees')" id="tab-refusees" class="tab-button px-6 py-4 font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600">
+                        <i class="fas fa-times-circle mr-2"></i>Refusées
                     </button>
                 </div>
             </div>
-        </div>
-        <div class="mb-6">
-            <a href="sent-invitations.php" class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                <i class="fas fa-paper-plane"></i>
-                Voir mes invitations envoyées
-            </a>
         </div>
 
         <!-- Liste des invitations -->
@@ -104,25 +125,25 @@ $email_joueur = $_SESSION['user_email'];
 
     <script>
         const currentUserEmail = '<?php echo $email_joueur; ?>';
-        let currentTab = 'nouvelles';
+        let currentTab = 'toutes';
         let allInvitations = [];
 
         // Configuration localStorage
-        const STORAGE_KEY = 'terrainbook_invitations';
+        const STORAGE_KEY = 'terrainbook_sent_invitations';
         const CACHE_DURATION = 10000; // 10 secondes (réduit pour un rafraîchissement plus rapide)
 
         document.addEventListener('DOMContentLoaded', function() {
             loadInvitations();
             window.addEventListener('storage', handleStorageChange);
-            setInterval(syncWithServer, 60000);
+            setInterval(syncWithServer, 60000); 
         });
 
         function handleStorageChange(e) {
             if (e.key === STORAGE_KEY) {
                 loadFromLocalStorage();
-            } else if (e.key === 'sync_invitations' || e.key === 'sync_sent_invitations') {
+            } else if (e.key === 'sync_sent_invitations') {
                 // Signal de synchronisation : recharger depuis le serveur
-                console.log('Signal de synchronisation reçu, rechargement des invitations...');
+                console.log('Signal de synchronisation reçu, rechargement des invitations envoyées...');
                 invalidateCache();
             }
         }
@@ -131,6 +152,7 @@ $email_joueur = $_SESSION['user_email'];
             const cached = getFromLocalStorage();
             if (cached && !isCacheExpired(cached.timestamp)) {
                 allInvitations = cached.data.invitations;
+                updateStats(cached.data.stats);
                 renderInvitations();
             } else {
                 fetchFromServer();
@@ -149,10 +171,7 @@ $email_joueur = $_SESSION['user_email'];
 
         function saveToLocalStorage(data) {
             try {
-                const cacheData = {
-                    data: data,
-                    timestamp: Date.now()
-                };
+                const cacheData = { data: data, timestamp: Date.now() };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheData));
             } catch (error) {
                 console.error('Erreur sauvegarde localStorage:', error);
@@ -164,14 +183,14 @@ $email_joueur = $_SESSION['user_email'];
         }
 
         function fetchFromServer() {
-            fetch('../../../actions/player/invitation/get_invitations.php')
+            fetch('../../../actions/player/invitation/get_sent_invitations.php')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         allInvitations = data.invitations;
                         saveToLocalStorage(data);
+                        updateStats(data.stats);
                         renderInvitations();
-                        updateBadge(data.stats.en_attente || 0);
                     }
                 })
                 .catch(error => {
@@ -179,6 +198,7 @@ $email_joueur = $_SESSION['user_email'];
                     const cached = getFromLocalStorage();
                     if (cached) {
                         allInvitations = cached.data.invitations;
+                        updateStats(cached.data.stats);
                         renderInvitations();
                     }
                 });
@@ -195,6 +215,7 @@ $email_joueur = $_SESSION['user_email'];
             const cached = getFromLocalStorage();
             if (cached) {
                 allInvitations = cached.data.invitations;
+                updateStats(cached.data.stats);
                 renderInvitations();
             }
         }
@@ -206,25 +227,31 @@ $email_joueur = $_SESSION['user_email'];
 
         function switchTab(tab) {
             currentTab = tab;
-            document.getElementById('tab-nouvelles').classList.remove('active');
-            document.getElementById('tab-historique').classList.remove('active');
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
             renderInvitations();
         }
 
-        // ✅ Met à jour uniquement le badge rouge
-        function updateBadge(count) {
-            const badge = document.getElementById('badge-nouvelles');
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'flex' : 'none';
+        function updateStats(stats) {
+            document.getElementById('stat-en-attente').textContent = stats.en_attente || 0;
+            document.getElementById('stat-acceptees').textContent = stats.acceptees || 0;
+            document.getElementById('stat-refusees').textContent = stats.refusees || 0;
         }
 
         function renderInvitations() {
             const container = document.getElementById('invitations-list');
-            let filteredInvitations = allInvitations.filter(inv => {
-                if (currentTab === 'nouvelles') return inv.statut === 'en_attente';
-                else return inv.statut !== 'en_attente';
-            });
+            let filteredInvitations = allInvitations;
+
+            if (currentTab !== 'toutes') {
+                // Mapper les onglets aux statuts de la base de données
+                const statutMap = {
+                    'en_attente': 'en_attente',
+                    'acceptees': 'acceptee',
+                    'refusees': 'refusee'
+                };
+                const statut = statutMap[currentTab] || currentTab;
+                filteredInvitations = allInvitations.filter(inv => inv.statut === statut);
+            }
 
             if (filteredInvitations.length === 0) {
                 container.innerHTML = `
@@ -240,37 +267,51 @@ $email_joueur = $_SESSION['user_email'];
         }
 
         function createInvitationHTML(inv) {
+            // Normaliser le statut (s'assurer qu'il correspond aux valeurs de la base de données)
+            let statut = inv.statut || 'en_attente';
+            if (statut === 'acceptees') statut = 'acceptee';
+            if (statut === 'refusees') statut = 'refusee';
+            if (!['en_attente', 'acceptee', 'refusee'].includes(statut)) {
+                statut = 'en_attente'; // Valeur par défaut
+            }
+            
             const statusColors = {
                 'en_attente': 'bg-orange-100 text-orange-700',
                 'acceptee': 'bg-emerald-100 text-emerald-700',
                 'refusee': 'bg-red-100 text-red-700'
             };
 
+            const statusIcons = {
+                'en_attente': 'fa-clock',
+                'acceptee': 'fa-check-circle',
+                'refusee': 'fa-times-circle'
+            };
+
             const statusLabels = {
-                'en_attente': 'En attente',
+                'en_attente': 'En attente de réponse',
                 'acceptee': 'Acceptée',
                 'refusee': 'Refusée'
             };
-
-            const isTournoi = inv.type === 'tournoi';
 
             return `
                 <div class="bg-white rounded-xl shadow-md p-6 fade-in">
                     <div class="flex items-start justify-between">
                         <div class="flex items-start gap-4 flex-1">
                             <div class="w-12 h-12 bg-gradient-to-br from-emerald-600 to-green-700 rounded-full flex items-center justify-center">
-                                <span class="text-white font-bold text-lg">${inv.expediteur_initiales}</span>
+                                <span class="text-white font-bold text-lg">${inv.destinataire_initiales}</span>
                             </div>
 
                             <div class="flex-1">
                                 <div class="flex items-center gap-3 mb-2">
                                     <h3 class="text-lg font-bold text-gray-900">${inv.nom_equipe}</h3>
-                                    ${isTournoi ? '<span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"><i class="fas fa-trophy mr-1"></i>Tournoi</span>' : ''}
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[inv.statut]}">${statusLabels[inv.statut]}</span>
+                                    <span class="status-badge px-3 py-1 rounded-full text-sm font-medium ${statusColors[statut]}">
+                                        <i class="fas ${statusIcons[statut]}"></i>
+                                        ${statusLabels[statut]}
+                                    </span>
                                 </div>
                                 <p class="text-sm text-gray-600 mb-2">
                                     <i class="fas fa-user text-emerald-600 mr-2"></i>
-                                    Par ${inv.expediteur_nom} ${inv.expediteur_prenom}
+                                    Envoyée à ${inv.destinataire_nom} ${inv.destinataire_prenom}
                                 </p>
                                 ${inv.date_debut ? `
                                     <p class="text-sm text-gray-600 mb-2">
@@ -282,79 +323,15 @@ $email_joueur = $_SESSION['user_email'];
                                         <i class="fas fa-running text-emerald-600 mr-2"></i>
                                         Position: ${inv.position} - Niveau: ${inv.niveau}
                                     </p>` : ''}
-                                ${isTournoi ? `
-                                    <p class="text-sm text-gray-600 mb-2">
-                                        <i class="fas fa-trophy text-emerald-600 mr-2"></i>
-                                        ${inv.nom_tournoi}
-                                    </p>` : ''}
                                 <p class="text-sm text-gray-700 mt-3 bg-gray-50 p-3 rounded-lg">${inv.contenu}</p>
                                 <p class="text-xs text-gray-400 mt-2">
-                                    <i class="fas fa-clock mr-1"></i>${inv.date_message_formatted}
+                                    <i class="fas fa-clock mr-1"></i>Envoyée le ${inv.date_message_formatted}
                                 </p>
                             </div>
                         </div>
-
-                        ${inv.statut === 'en_attente' ? `
-                            <div class="flex items-center gap-3 ml-4">
-                                <button onclick="accepterInvitation(${inv.id_demande}, ${inv.id_message})"
-                                        class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center gap-2">
-                                    <i class="fas fa-check"></i>Accepter
-                                </button>
-                                <button onclick="refuserInvitation(${inv.id_demande})"
-                                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2">
-                                    <i class="fas fa-times"></i>Refuser
-                                </button>
-                            </div>` : ''}
                     </div>
                 </div>
             `;
-        }
-
-        function accepterInvitation(idDemande, idMessage) {
-            if (!confirm('Voulez-vous accepter cette invitation ?')) return;
-            fetch('../../../actions/player/invitation/accepter_invitation.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id_demande: idDemande,
-                        id_message: idMessage
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('success', 'Invitation acceptée avec succès');
-                        invalidateCache();
-                    } else {
-                        showNotification('error', data.message);
-                    }
-                })
-                .catch(() => showNotification('error', 'Erreur lors de l\'acceptation'));
-        }
-
-        function refuserInvitation(idDemande) {
-            if (!confirm('Voulez-vous refuser cette invitation ?')) return;
-            fetch('../../../actions/player/invitation/refuser_invitation.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id_demande: idDemande
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('success', 'Invitation refusée');
-                        invalidateCache();
-                    } else {
-                        showNotification('error', data.message);
-                    }
-                })
-                .catch(() => showNotification('error', 'Erreur lors du refus'));
         }
 
         function showNotification(type, message) {
@@ -380,5 +357,4 @@ $email_joueur = $_SESSION['user_email'];
         }
     </script>
 </body>
-
 </html>
