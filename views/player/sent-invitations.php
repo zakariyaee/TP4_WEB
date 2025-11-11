@@ -247,7 +247,14 @@ $email_joueur = $_SESSION['user_email'];
             let filteredInvitations = allInvitations;
 
             if (currentTab !== 'toutes') {
-                filteredInvitations = allInvitations.filter(inv => inv.statut === currentTab);
+                // Mapper les onglets aux statuts de la base de données
+                const statutMap = {
+                    'en_attente': 'en_attente',
+                    'acceptees': 'acceptee',
+                    'refusees': 'refusee'
+                };
+                const statut = statutMap[currentTab] || currentTab;
+                filteredInvitations = allInvitations.filter(inv => inv.statut === statut);
             }
 
             if (filteredInvitations.length === 0) {
@@ -264,6 +271,14 @@ $email_joueur = $_SESSION['user_email'];
         }
 
         function createInvitationHTML(inv) {
+            // Normaliser le statut (s'assurer qu'il correspond aux valeurs de la base de données)
+            let statut = inv.statut || 'en_attente';
+            if (statut === 'acceptees') statut = 'acceptee';
+            if (statut === 'refusees') statut = 'refusee';
+            if (!['en_attente', 'acceptee', 'refusee'].includes(statut)) {
+                statut = 'en_attente'; // Valeur par défaut
+            }
+            
             const statusColors = {
                 'en_attente': 'bg-orange-100 text-orange-700',
                 'acceptee': 'bg-emerald-100 text-emerald-700',
@@ -293,9 +308,9 @@ $email_joueur = $_SESSION['user_email'];
                             <div class="flex-1">
                                 <div class="flex items-center gap-3 mb-2">
                                     <h3 class="text-lg font-bold text-gray-900">${inv.nom_equipe}</h3>
-                                    <span class="status-badge px-3 py-1 rounded-full text-sm font-medium ${statusColors[inv.statut]}">
-                                        <i class="fas ${statusIcons[inv.statut]}"></i>
-                                        ${statusLabels[inv.statut]}
+                                    <span class="status-badge px-3 py-1 rounded-full text-sm font-medium ${statusColors[statut]}">
+                                        <i class="fas ${statusIcons[statut]}"></i>
+                                        ${statusLabels[statut]}
                                     </span>
                                 </div>
                                 <p class="text-sm text-gray-600 mb-2">

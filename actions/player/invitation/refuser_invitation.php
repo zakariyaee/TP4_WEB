@@ -21,7 +21,7 @@ try {
     
     // Vérifier que l'invitation appartient bien au joueur
     $stmt = $pdo->prepare("
-        SELECT dr.*, m.email_destinataire, e.nom_equipe
+        SELECT dr.*, m.email_destinataire, m.email_expediteur, e.nom_equipe
         FROM demande_rejoindre dr
         INNER JOIN message m ON dr.id_message = m.id_message
         INNER JOIN equipe e ON dr.id_equipe = e.id_equipe
@@ -56,7 +56,7 @@ try {
         ");
         $stmt->execute([':id_demande' => $data['id_demande']]);
         
-        // Envoyer une notification à l'expéditeur
+        // Envoyer une notification à l'expéditeur (celui qui a envoyé l'invitation)
         $stmt = $pdo->prepare("
             INSERT INTO message (contenu, email_expediteur, email_destinataire, type_message) 
             VALUES (:contenu, :expediteur, :destinataire, 'notification')
@@ -65,7 +65,7 @@ try {
         $stmt->execute([
             ':contenu' => "Votre invitation à rejoindre l'équipe '{$invitation['nom_equipe']}' a été refusée.",
             ':expediteur' => $email_joueur,
-            ':destinataire' => $invitation['email_demandeur']
+            ':destinataire' => $invitation['email_expediteur']
         ]);
         
         $pdo->commit();
