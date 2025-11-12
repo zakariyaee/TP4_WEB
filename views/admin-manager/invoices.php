@@ -48,17 +48,6 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
               <p class="text-slate-600 text-sm">Consulter et envoyer les factures</p>
             </div>
           </div>
-          
-          <div class="flex gap-3">
-            <button id="btn-send-reminders" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow transition flex items-center gap-2">
-              <i class="fas fa-bell"></i>
-              <span>Relancer impayés</span>
-            </button>
-            <button id="btn-generate-all" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition flex items-center gap-2">
-              <i class="fas fa-file-pdf"></i>
-              <span>Générer toutes</span>
-            </button>
-          </div>
         </div>
 
         <!-- Stats cards -->
@@ -67,7 +56,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-slate-500 text-sm font-medium mb-2">Montant Total</p>
-                <h3 id="stat-total" class="text-3xl font-bold text-slate-800">1485 €</h3>
+                <h3 id="stat-total" class="text-3xl font-bold text-slate-800">0 €</h3>
               </div>
               <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                 <i class="fas fa-euro-sign text-blue-600 text-xl"></i>
@@ -79,7 +68,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-slate-500 text-sm font-medium mb-2">Payées</p>
-                <h3 id="stat-payees" class="text-3xl font-bold text-green-600">550 €</h3>
+                <h3 id="stat-payees" class="text-3xl font-bold text-green-600">0 €</h3>
               </div>
               <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                 <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -91,7 +80,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-slate-500 text-sm font-medium mb-2">En Attente</p>
-                <h3 id="stat-attente" class="text-3xl font-bold text-orange-600">575 €</h3>
+                <h3 id="stat-attente" class="text-3xl font-bold text-orange-600">0 €</h3>
               </div>
               <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
                 <i class="fas fa-clock text-orange-600 text-xl"></i>
@@ -103,7 +92,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-slate-500 text-sm font-medium mb-2">En Retard</p>
-                <h3 id="stat-retard" class="text-3xl font-bold text-red-600">1</h3>
+                <h3 id="stat-retard" class="text-3xl font-bold text-red-600">0</h3>
               </div>
               <div class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
                 <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>

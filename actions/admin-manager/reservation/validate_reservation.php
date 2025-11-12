@@ -31,7 +31,7 @@ if (isset($_SESSION['user_role']) &&  $_SESSION['user_role'] == 'responsable') {
     $_SESSION['totalConfirmedReservations'] = $stmt->fetchColumn();
 
     // En attente
-    $queryPendingReservations = "SELECT COUNT(*) FROM reservation WHERE statut='en_attente' AND id_terrain IN (SELECT id_terrain FROM terrain WHERE id_responsable=:responsable_id)";
+    $queryPendingReservations = "SELECT COUNT(*) FROM reservation WHERE statut='annuler' AND id_terrain IN (SELECT id_terrain FROM terrain WHERE id_responsable=:responsable_id)";
     $stmt = $pdo->prepare($queryPendingReservations);
     $stmt->bindParam(':responsable_id', $responsable_id);
     $stmt->execute();
@@ -140,7 +140,7 @@ if (isset($_SESSION['user_role']) &&  $_SESSION['user_role'] == 'responsable') {
     $_SESSION['totalConfirmedReservations'] = $stmt->fetchColumn();
 
     // En attente
-    $queryPendingReservations = "SELECT COUNT(*) FROM reservation WHERE statut='en_attente'";
+    $queryPendingReservations = "SELECT COUNT(*) FROM reservation WHERE statut='annuler'";
     $stmt = $pdo->prepare($queryPendingReservations);
     $stmt->execute();
     $_SESSION['totalPendingReservations'] = $stmt->fetchColumn();
