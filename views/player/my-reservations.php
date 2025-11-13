@@ -170,6 +170,33 @@ $nb_historiques = count($historique);
             border-bottom: 2px solid #10b981;
             color: #10b981;
         }
+        #editModal.show {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+#editModal .bg-white {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
     </style>
 </head>
 <body class="bg-gray-50">
@@ -183,7 +210,7 @@ $nb_historiques = count($historique);
         </div>
 
         <!-- Statistiques -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
@@ -211,23 +238,11 @@ $nb_historiques = count($historique);
             <div class="bg-white rounded-xl shadow-md p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm">En attente</p>
+                        <p class="text-gray-600 text-sm">Annule</p>
                         <p class="text-3xl font-bold text-orange-600" id="pendingReservations"><?= $nb_en_attente ?></p>
                     </div>
                     <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-clock text-orange-600 text-xl"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm">Matchs joués</p>
-                        <p class="text-3xl font-bold text-purple-600"><?= $nb_historiques ?></p>
-                    </div>
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-history text-purple-600 text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -390,72 +405,42 @@ $nb_historiques = count($historique);
         </div>
     </div>
 
-    <script>
-        let currentTab = 'prochaines';
+            <!-- Form popup pour modifier une réservation -->
+             <!-- À ajouter dans votre fichier mes_reservations.php, avant la fermeture du </body> -->
 
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // Mettre à jour les onglets
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            // Afficher/masquer les sections
-            document.getElementById('section-prochaines').classList.toggle('hidden', tab !== 'prochaines');
-            document.getElementById('section-historique').classList.toggle('hidden', tab !== 'historique');
-        }
+        <!-- Modal de modification de réservation -->
+        <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <!-- En-tête du modal -->
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-edit text-emerald-600 mr-2"></i>
+                        Modifier la réservation
+                    </h2>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
 
-        function editReservation(id) {
-            // TODO: Implémenter l'édition de réservation
-            alert('Fonctionnalité d\'édition à implémenter');
-        }
+                <!-- Contenu du modal -->
+                <div id="editModalContent" class="p-6">
+                    <!-- Loader initial -->
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                    </div>
+                </div>
 
-        function cancelReservation(id) {
-            if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
-                return;
-            }
-            
-            fetch('../../actions/player/cancel_reservation.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_reservation: id })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('success', 'Réservation annulée avec succès');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showNotification('error', data.message || 'Erreur lors de l\'annulation');
-                }
-            })
-            .catch(error => {
-                console.error('Erreur:', error);
-                showNotification('error', 'Erreur lors de l\'annulation');
-            });
-        }
-
-        function showNotification(type, message) {
-            const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-blue-500'
-            };
-
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
-            notification.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                    <span>${message}</span>
-                </div>`;
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateY(-10px)';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-    </script>
+                <!-- Pied du modal -->
+                <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex gap-3">
+                    <button onclick="closeEditModal()" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition font-medium">
+                        <i class="fas fa-times mr-2"></i>Annuler
+                    </button>
+                    <button onclick="saveReservation()" id="saveBtn" class="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium">
+                        <i class="fas fa-check mr-2"></i>Enregistrer les modifications
+                    </button>
+                </div>
+            </div>
+        </div>
+    <script src="/assets/js/user_Reservation.js"></script>
 </body>
 </html>
