@@ -6,13 +6,13 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 
-require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../check_auth.php';
+
+checkJoueur();
 
 try {
-    // Vérifier si l'utilisateur est connecté
-    if (!isset($_SESSION['user_email'])) {
-        throw new Exception('Utilisateur non connecté');
-    }
+    $email_joueur = $_SESSION['user_email'];
 
     // Récupérer les données JSON
     $input = file_get_contents('php://input');
@@ -23,7 +23,6 @@ try {
     }
 
     $id_reservation = (int)$data['id_reservation'];
-    $email_joueur = $_SESSION['user_email'];
     
     // ========================================
     // VÉRIFIER QUE LA RÉSERVATION APPARTIENT À L'UTILISATEUR

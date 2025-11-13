@@ -12,7 +12,6 @@
                 </div>
                 <div>
                     <span class="text-xl font-bold text-gray-900 block">TerrainBook</span>
-                    
                 </div>
             </a>
 
@@ -70,7 +69,6 @@
                         </svg>
                     </div>
                     <div>
-                        
                         <div class="text-xs text-gray-500"><?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
                     </div>
                 </div>
@@ -86,3 +84,31 @@
         </div>
     </nav>
 </header>
+
+<script>
+// Mettre à jour le badge de notification dans le header
+function updateHeaderNotificationBadge() {
+    fetch('../../../actions/player/invitation/get_count.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById('header-notification-badge');
+                const count = data.count || 0;
+                
+                if (count > 0) {
+                    badge.textContent = count > 9 ? '9+' : count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        })
+        .catch(error => console.error('Erreur badge:', error));
+}
+
+// Démarrer la synchronisation du badge
+document.addEventListener('DOMContentLoaded', function() {
+    updateHeaderNotificationBadge();
+    setInterval(updateHeaderNotificationBadge, 5000); // Toutes les 5 secondes
+});
+</script>
