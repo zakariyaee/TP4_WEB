@@ -71,7 +71,7 @@ $pageTitle = "Gestion des Tournois";
 
             <!-- Filters and Search Section -->
             <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">
                             Rechercher
@@ -87,21 +87,8 @@ $pageTitle = "Gestion des Tournois";
                         </label>
                         <select id="filterStatut" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
                             <option value="">Tous les statuts</option>
-                            <option value="planifie">Planifié</option>
                             <option value="en_cours">En cours</option>
                             <option value="termine">Terminé</option>
-                            <option value="annule">Annulé</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Catégorie
-                        </label>
-                        <select id="filterType" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
-                            <option value="">Toutes les catégories</option>
-                            <option value="Senior">Senior</option>
-                            <option value="U-21">U-21</option>
-                            <option value="Open">Open</option>
                         </select>
                     </div>
                 </div>
@@ -215,19 +202,6 @@ $pageTitle = "Gestion des Tournois";
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Catégorie *
-                        </label>
-                        <select id="type_tournoi" name="type_tournoi" required 
-                            class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
-                            <option value="">Sélectionner...</option>
-                            <option value="Senior">Senior</option>
-                            <option value="U-21">U-21</option>
-                            <option value="Open">Open</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
                             Date de début *
                         </label>
                         <input type="date" id="date_debut" name="date_debut" required 
@@ -270,15 +244,11 @@ $pageTitle = "Gestion des Tournois";
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Statut *
+                            Statut (calculé automatiquement)
                         </label>
-                        <select id="statut" name="statut" required 
-                            class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
-                            <option value="planifie">Planifié</option>
-                            <option value="en_cours">En cours</option>
-                            <option value="termine">Terminé</option>
-                            <option value="annule">Annulé</option>
-                        </select>
+                        <input type="text" id="statutDisplay" readonly
+                            class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-100 text-gray-700 cursor-not-allowed">
+                        <input type="hidden" id="statut" name="statut" value="planifie">
                     </div>
                 </div>
 
@@ -332,7 +302,7 @@ $pageTitle = "Gestion des Tournois";
         </div>
     </div>
 
-    <script src="../../assets/js/tournament.js"></script>
+    <script src="../../assets/js/tournament.js?v=2"></script>
 
 </body>
 

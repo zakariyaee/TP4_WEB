@@ -24,7 +24,7 @@ if (empty($userEmail)) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT email, nom, prenom, role, statut_compte FROM Utilisateur WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT email, nom, prenom, num_tele, role, statut_compte, DATE_FORMAT(date_creation, '%Y-%m-%d %H:%i:%s') AS date_creation FROM Utilisateur WHERE email = ?");
     $stmt->execute([$userEmail]);
     $user = $stmt->fetch();
 

@@ -28,6 +28,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 $originalEmail = trim($data['originalEmail'] ?? '');
 $nom = trim($data['nom'] ?? '');
 $prenom = trim($data['prenom'] ?? '');
+$numTele = trim($data['num_tele'] ?? '');
 $userRole = trim($data['role'] ?? '');
 $accountStatus = trim($data['statut_compte'] ?? 'actif');
 $userPassword = $data['password'] ?? '';
@@ -51,6 +52,12 @@ if (!in_array($userRole, ['admin','responsable','joueur'])) {
     exit;
 }
 
+if (!empty($numTele) && !preg_match('/^[0-9+\s\-]{6,20}$/', $numTele)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Numéro de téléphone invalide']);
+    exit;
+}
+
 try {
     // Get current user role
     $stmt = $pdo->prepare("SELECT role FROM Utilisateur WHERE email = ?");
@@ -67,6 +74,8 @@ try {
     
     $pdo->beginTransaction();
 
+    $numTeleValue = $numTele !== '' ? $numTele : null;
+
     // Update password if provided
     if (!empty($userPassword)) {
         if (strlen($userPassword) < 6) {
@@ -76,11 +85,11 @@ try {
             exit;
         }
         $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE Utilisateur SET nom = ?, prenom = ?, role = ?, statut_compte = ?, mot_de_passe = ? WHERE email = ?");
-        $stmt->execute([$nom, $prenom, $userRole, $accountStatus, $hashedPassword, $originalEmail]);
+        $stmt = $pdo->prepare("UPDATE Utilisateur SET nom = ?, prenom = ?, num_tele = ?, role = ?, statut_compte = ?, mot_de_passe = ? WHERE email = ?");
+        $stmt->execute([$nom, $prenom, $numTeleValue, $userRole, $accountStatus, $hashedPassword, $originalEmail]);
     } else {
-        $stmt = $pdo->prepare("UPDATE Utilisateur SET nom = ?, prenom = ?, role = ?, statut_compte = ? WHERE email = ?");
-        $stmt->execute([$nom, $prenom, $userRole, $accountStatus, $originalEmail]);
+        $stmt = $pdo->prepare("UPDATE Utilisateur SET nom = ?, prenom = ?, num_tele = ?, role = ?, statut_compte = ? WHERE email = ?");
+        $stmt->execute([$nom, $prenom, $numTeleValue, $userRole, $accountStatus, $originalEmail]);
     }
 
     // Manage related tables based on role change

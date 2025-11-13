@@ -122,7 +122,13 @@ $pageTitle = "Gestion des Utilisateurs";
                                     Email
                                 </th>
                                 <th class="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Téléphone
+                                </th>
+                                <th class="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                     Rôle
+                                </th>
+                                <th class="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Créé le
                                 </th>
                                 <th class="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                     Statut
@@ -191,6 +197,14 @@ $pageTitle = "Gestion des Utilisateurs";
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Numéro de téléphone
+                        </label>
+                        <input type="tel" id="num_tele" name="num_tele" 
+                            class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                            placeholder="+212 6 12 34 56 78">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
                             Rôle *
                         </label>
                         <select id="role" name="role" required 
@@ -198,7 +212,6 @@ $pageTitle = "Gestion des Utilisateurs";
                             <option value="">Sélectionner...</option>
                             <option value="admin">Admin</option>
                             <option value="responsable">Responsable</option>
-                            <option value="joueur">Joueur</option>
                         </select>
                     </div>
                     <div>
@@ -219,6 +232,13 @@ $pageTitle = "Gestion des Utilisateurs";
                         <input type="password" id="password" name="password" 
                             class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white" 
                             placeholder="••••••">
+                    </div>
+                    <div id="dateCreationWrapper" class="hidden md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Date de création
+                        </label>
+                        <input type="text" id="date_creation" readonly 
+                            class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed">
                     </div>
                 </div>
 
@@ -256,7 +276,7 @@ $pageTitle = "Gestion des Utilisateurs";
         </div>
     </div>
 
-    <script src="../../assets/js/user.js"></script>
+    <script src="../../assets/js/user.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/user.js'); ?>"></script>
 
 </body>
 

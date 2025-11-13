@@ -1,7 +1,7 @@
 <?php
 /**
  * Add new tournament
- * 
+ *
  * Creates a new tournament with validation and permission checks.
  * Handles flexible column schema (email_organisateur, prix_inscription).
  * Admin and Responsable access (responsable can only create on their terrains).
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data = json_decode(file_get_contents('php://input'), true);
 
 $nomTournoi = trim($data['nom_tournoi'] ?? '');
-$typeTournoi = trim($data['type_tournoi'] ?? '');
+$typeTournoi = isset($data['type_tournoi']) && $data['type_tournoi'] !== '' ? trim($data['type_tournoi']) : null;
 $dateDebut = $data['date_debut'] ?? '';
 $dateFin = $data['date_fin'] ?? '';
 $nbEquipes = intval($data['nb_equipes'] ?? 0);
@@ -41,11 +41,6 @@ if (empty($nomTournoi) || empty($dateDebut) || empty($dateFin) || $nbEquipes < 2
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Tous les champs requis doivent être remplis']);
     exit;
-}
-
-// Default value if not provided
-if ($typeTournoi === '') {
-    $typeTournoi = 'Open';
 }
 
 if (!in_array($statut, ['planifie', 'en_cours', 'termine', 'annule'])) {
@@ -65,13 +60,13 @@ if ($idTerrain) {
     $stmt = $pdo->prepare("SELECT id_terrain, id_responsable FROM terrain WHERE id_terrain = ?");
     $stmt->execute([$idTerrain]);
     $terrain = $stmt->fetch();
-    
+
     if (!$terrain) {
         http_response_code(404);
         echo json_encode(['success' => false, 'message' => 'Terrain introuvable']);
         exit;
     }
-    
+
     if ($_SESSION['user_role'] === 'responsable' && $terrain['id_responsable'] !== $_SESSION['user_email']) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => "Vous n'avez pas la permission d'utiliser ce terrain"]);
@@ -82,9 +77,9 @@ if ($idTerrain) {
 try {
     $pdo->beginTransaction();
 
-    // Attempt with email_organisateur and prix_inscription if columns present
-    $sqlWithAll = "INSERT INTO tournoi (nom_t, categorie, date_debut, date_fin, size, description, statut, id_terrain, email_organisateur, prix_inscription)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Attempt with optional columns if they exist
+    $sqlWithAll = "INSERT INTO tournoi (nom_t, categorie, date_debut, date_fin, size, description, statut, id_terrain, email_organisateur, prix_inscription, regles)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $pdo->prepare($sqlWithAll);
     try {
         $stmt->execute([
@@ -97,33 +92,52 @@ try {
             $statut,
             $idTerrain,
             $_SESSION['user_email'] ?? null,
-            $prixInscription
+            $prixInscription,
+            $regles ?: null
         ]);
     } catch (PDOException $e1) {
         if ($e1->getCode() === '42S22' || stripos($e1->getMessage(), 'Unknown column') !== false) {
-            // Retry without email_organisateur/prix_inscription based on availability
             try {
-                $stmt2 = $pdo->prepare("INSERT INTO tournoi (nom_t, categorie, date_debut, date_fin, size, description, statut, id_terrain, prix_inscription)
-                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt2 = $pdo->prepare("INSERT INTO tournoi (nom_t, categorie, date_debut, date_fin, size, description, statut, id_terrain, prix_inscription, regles)
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt2->execute([
-                    $nomTournoi, $typeTournoi, $dateDebut, $dateFin, $nbEquipes, $description, $statut, $idTerrain, $prixInscription
+                    $nomTournoi,
+                    $typeTournoi,
+                    $dateDebut,
+                    $dateFin,
+                    $nbEquipes,
+                    $description,
+                    $statut,
+                    $idTerrain,
+                    $prixInscription,
+                    $regles ?: null
                 ]);
             } catch (PDOException $e2) {
                 if ($e2->getCode() === '42S22' || stripos($e2->getMessage(), 'Unknown column') !== false) {
                     $stmt3 = $pdo->prepare("INSERT INTO tournoi (nom_t, categorie, date_debut, date_fin, size, description, statut, id_terrain)
                                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt3->execute([
-                        $nomTournoi, $typeTournoi, $dateDebut, $dateFin, $nbEquipes, $description, $statut, $idTerrain
+                        $nomTournoi,
+                        $typeTournoi,
+                        $dateDebut,
+                        $dateFin,
+                        $nbEquipes,
+                        $description,
+                        $statut,
+                        $idTerrain
                     ]);
-                } else { throw $e2; }
+                } else {
+                    throw $e2;
+                }
             }
-        } else { throw $e1; }
+        } else {
+            throw $e1;
+        }
     }
 
     $pdo->commit();
     http_response_code(201);
     echo json_encode(['success' => true, 'message' => 'Tournoi créé avec succès']);
-    
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
@@ -145,4 +159,4 @@ try {
         'message' => 'Erreur lors de la création du tournoi'
     ]);
 }
-?>
+
