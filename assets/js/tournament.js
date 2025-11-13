@@ -6,6 +6,11 @@ let isLoading = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('tournoisContainer');
+    if (!container) {
+        return;
+    }
+
     loadTournaments();
     loadFields();
     setupEventListeners();
@@ -21,30 +26,45 @@ document.addEventListener('DOMContentLoaded', function() {
  * 
  * Configures event listeners on page load for:
  * - Real-time search input with debounce (500ms delay)
- * - Status and type filter changes
+ * - Status filter changes
  * - Form submission
  * 
  * @returns {void}
  */
 function setupEventListeners() {
     // Real-time search
-    document.getElementById('searchInput').addEventListener('input', debounce(() => {
-        tournamentsCache.clear();
-        loadTournaments(true);
-    }, 300)); // Reduced debounce time for better responsiveness
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(() => {
+            tournamentsCache.clear();
+            loadTournaments(true);
+        }, 300)); // Reduced debounce time for better responsiveness
+    }
 
     // Filters
-    document.getElementById('filterStatut').addEventListener('change', () => {
-        tournamentsCache.clear();
-        loadTournaments(true);
-    });
-    document.getElementById('filterType').addEventListener('change', () => {
-        tournamentsCache.clear();
-        loadTournaments(true);
+    const statutFilter = document.getElementById('filterStatut');
+    if (statutFilter) {
+        statutFilter.addEventListener('change', () => {
+            tournamentsCache.clear();
+            loadTournaments(true);
+        });
+    }
+
+    // Auto status updates based on dates
+    const dateDebutField = document.getElementById('date_debut');
+    const dateFinField = document.getElementById('date_fin');
+    [dateDebutField, dateFinField].forEach(field => {
+        if (field) {
+            field.addEventListener('change', () => autoUpdateStatus());
+            field.addEventListener('input', () => autoUpdateStatus());
+        }
     });
 
     // Form
-    document.getElementById('tournoiForm').addEventListener('submit', handleSubmit);
+    const tournoiForm = document.getElementById('tournoiForm');
+    if (tournoiForm) {
+        tournoiForm.addEventListener('submit', handleSubmit);
+    }
 }
 
 /**
@@ -70,9 +90,90 @@ function debounce(func, wait) {
 }
 
 /**
+ * Compute tournament status based on start/end dates
+ *
+ * @param {string} startValue - Date string (YYYY-MM-DD)
+ * @param {string} endValue - Date string (YYYY-MM-DD)
+ * @returns {string} Status code
+ */
+function computeStatusFromDates(startValue, endValue) {
+    if (!startValue || !endValue) {
+        return 'planifie';
+    }
+
+    const start = new Date(startValue);
+    const end = new Date(endValue);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return 'planifie';
+    }
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    const now = new Date();
+
+    if (now > end) {
+        return 'termine';
+    }
+    if (now >= start) {
+        return 'en_cours';
+    }
+    return 'planifie';
+}
+
+/**
+ * Update hidden statut field and readonly display
+ *
+ * @param {string} statut - Status code
+ * @returns {void}
+ */
+function applyStatus(statut) {
+    const statutInput = document.getElementById('statut');
+    if (!statutInput) return;
+    const nextStatus = statut || 'planifie';
+    statutInput.value = nextStatus;
+
+    const statutDisplay = document.getElementById('statutDisplay');
+    if (statutDisplay) {
+        statutDisplay.value = getStatusLabel(nextStatus);
+    }
+}
+
+/**
+ * Automatically update status field based on current dates
+ *
+ * Keeps "annule" untouched if already set.
+ *
+ * @param {boolean} [force=false] - When true, recomputes even if called programmatically
+ * @returns {void}
+ */
+function autoUpdateStatus(force = false) {
+    const statutInput = document.getElementById('statut');
+    const dateDebutField = document.getElementById('date_debut');
+    const dateFinField = document.getElementById('date_fin');
+
+    if (!statutInput || !dateDebutField || !dateFinField) {
+        return;
+    }
+
+    const currentStatus = statutInput.value;
+    if (currentStatus === 'annule' && !force) {
+        applyStatus(currentStatus);
+        return;
+    }
+
+    if (currentStatus === 'annule' && force) {
+        applyStatus(currentStatus);
+        return;
+    }
+
+    const computed = computeStatusFromDates(dateDebutField.value, dateFinField.value);
+    applyStatus(computed);
+}
+
+/**
  * Load tournaments list from server with filters
  * 
- * Fetches tournaments from server with optional search, status and type filters.
+ * Fetches tournaments from server with optional search and status filters.
  * Implements caching to reduce server requests and improve performance.
  * Displays loading indicator during request.
  * Partner: Error Management - Handles HTTP errors, network errors and JSON parsing errors.
@@ -81,14 +182,26 @@ function debounce(func, wait) {
  * @returns {void}
  */
 function loadTournaments(forceRefresh = false) {
+    const container = document.getElementById('tournoisContainer');
+    if (!container) {
+        return;
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    const statutFilter = document.getElementById('filterStatut');
+
+    if (!searchInput || !statutFilter) {
+        console.warn('Tournoi UI elements missing: aborting loadTournaments');
+        return;
+    }
+
     if (isLoading) return;
-    
-    const search = document.getElementById('searchInput').value;
-    const statut = document.getElementById('filterStatut').value;
-    const type = document.getElementById('filterType').value;
+
+    const search = searchInput.value;
+    const statut = statutFilter.value;
 
     // Create cache key
-    const cacheKey = `${search}-${statut}-${type}`;
+    const cacheKey = `${search}-${statut}`;
     
     // Check cache first (unless force refresh)
     if (!forceRefresh && tournamentsCache.has(cacheKey)) {
@@ -112,7 +225,7 @@ function loadTournaments(forceRefresh = false) {
 
     const xhr = new XMLHttpRequest();
     // Security: encodeURIComponent prevents XSS in URL parameters
-    xhr.open('GET', `../../actions/admin-manager/tournament/get_tournaments.php?search=${encodeURIComponent(search)}&statut=${statut}&type=${type}`, true);
+    xhr.open('GET', `../../actions/admin-manager/tournament/get_tournaments.php?search=${encodeURIComponent(search)}&statut=${statut}`, true);
 
     xhr.onload = function() {
         isLoading = false;
@@ -197,7 +310,6 @@ function displayTournaments(tournois) {
     // Security: All tournament data is escaped before rendering
     container.innerHTML = tournois.map(tournoi => {
         const nomTournoi = escapeHtml(tournoi.nom_tournoi);
-        const typeTournoi = escapeHtml(tournoi.type_tournoi);
         const description = escapeHtml(tournoi.description || '');
         const terrainNom = escapeHtml(tournoi.terrain_nom || 'Terrain non assigné');
         const statut = escapeHtml(tournoi.statut);
@@ -211,11 +323,6 @@ function displayTournaments(tournois) {
                     <div class="absolute top-3 right-3">
                         <span class="px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(tournoi.statut)}">
                             ${getStatusLabel(tournoi.statut)}
-                        </span>
-                    </div>
-                    <div class="absolute top-3 left-3">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-white text-gray-800">
-                            ${escapeHtml(getTypeLabel(typeTournoi))}
                         </span>
                     </div>
                 </div>
@@ -334,6 +441,8 @@ function openAddModal() {
     if (submitBtnInit) {
         submitBtnInit.innerHTML = '<i class="fas fa-plus mr-2"></i>Créer';
     }
+    applyStatus('planifie');
+    autoUpdateStatus(true);
     document.getElementById('tournoiModal').classList.remove('hidden');
 }
 
@@ -366,13 +475,13 @@ function editTournament(id) {
                     document.getElementById('modalTitle').textContent = 'Modifier le tournoi';
                     document.getElementById('tournoiId').value = tournoi.id_tournoi;
                     document.getElementById('nom_tournoi').value = tournoi.nom_tournoi;
-                    document.getElementById('type_tournoi').value = tournoi.type_tournoi;
                     document.getElementById('date_debut').value = tournoi.date_debut;
                     document.getElementById('date_fin').value = tournoi.date_fin;
                     document.getElementById('nb_equipes').value = tournoi.nb_equipes;
                     document.getElementById('prix_inscription').value = tournoi.prix_inscription || '';
                     document.getElementById('id_terrain').value = tournoi.id_terrain || '';
-                    document.getElementById('statut').value = tournoi.statut;
+                    applyStatus(tournoi.statut);
+                    autoUpdateStatus(true);
                     document.getElementById('description').value = tournoi.description || '';
                     document.getElementById('regles').value = tournoi.regles || '';
 
@@ -632,6 +741,8 @@ function removeTeam(idEquipe, btnEl, skipConfirm = false) {
 function handleSubmit(e) {
     e.preventDefault();
 
+    autoUpdateStatus(true);
+
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     const isEdit = !!currentTournamentId;
@@ -639,6 +750,12 @@ function handleSubmit(e) {
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
+    if (!data.statut) {
+        data.statut = computeStatusFromDates(
+            document.getElementById('date_debut')?.value,
+            document.getElementById('date_fin')?.value
+        );
+    }
 
     const xhr = new XMLHttpRequest();
     // Determine endpoint: edit if currentTournamentId exists, otherwise add
@@ -918,20 +1035,6 @@ function getStatusLabel(statut) {
         'annule': 'Annulé'
     };
     return labels[statut] || statut;
-}
-
-/**
- * Get tournament type label
- * 
- * Returns tournament type as-is (Senior, U-21, Open, etc.).
- * Used for display purposes.
- * 
- * @param {string} type - Tournament type
- * @returns {string} Tournament type label
- */
-function getTypeLabel(type) {
-    // Display as is (Senior, U-21, Open, ...)
-    return type || '';
 }
 
 /**

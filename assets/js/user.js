@@ -196,7 +196,7 @@ function displayUsers(users) {
     if (users.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-10 text-center text-gray-500">
                     <i class="fas fa-users-slash text-4xl mb-3 text-gray-300"></i>
                     <div>Aucun utilisateur trouvé</div>
                 </td>
@@ -227,8 +227,11 @@ function displayUsers(users) {
         const nom = escapeHtml(u.nom);
         const prenom = escapeHtml(u.prenom);
         const email = escapeHtml(u.email);
+        const phone = escapeHtml(u.num_tele) || '';
+        const phoneDisplay = phone.trim() !== '' ? phone : 'Non renseigné';
         const role = escapeHtml(u.role);
         const statut = escapeHtml(u.statut_compte);
+        const createdAt = formatDateTime(u.date_creation);
         // Security: Escape email for use in onclick attribute (escape quotes)
         const emailAttr = escapeHtml(u.email).replace(/'/g, "\\'");
         
@@ -249,7 +252,13 @@ function displayUsers(users) {
                     <div class="text-sm text-gray-700 font-medium">${email}</div>
                 </td>
                 <td class="px-8 py-5 whitespace-nowrap">
+                    <div class="text-sm text-gray-700">${phoneDisplay}</div>
+                </td>
+                <td class="px-8 py-5 whitespace-nowrap">
                     <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-lg shadow-sm ${roleClass(role)}">${capitalize(role)}</span>
+                </td>
+                <td class="px-8 py-5 whitespace-nowrap">
+                    <div class="text-sm text-gray-600">${createdAt}</div>
                 </td>
                 <td class="px-8 py-5 whitespace-nowrap">
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -284,6 +293,38 @@ function statutClass(s) {
     return m[s] || 'bg-gray-100 text-gray-800';
 }
 function capitalize(t) { return (t || '').charAt(0).toUpperCase() + (t || '').slice(1); }
+function formatDateTime(dateString) {
+    if (!dateString) return '—';
+    const normalized = dateString.replace(' ', 'T');
+    const parsedDate = new Date(normalized);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return dateString;
+    }
+    return parsedDate.toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+function resetRoleSelect() {
+    const roleSelect = document.getElementById('role');
+    if (!roleSelect) return;
+    roleSelect.querySelectorAll('option[data-temp-role="true"]').forEach(option => option.remove());
+    roleSelect.value = '';
+}
+function ensureRoleOption(role) {
+    const roleSelect = document.getElementById('role');
+    if (!roleSelect || !role) return;
+    if (!roleSelect.querySelector(`option[value="${role}"]`)) {
+        const option = document.createElement('option');
+        option.value = role;
+        option.textContent = capitalize(role);
+        option.dataset.tempRole = 'true';
+        roleSelect.appendChild(option);
+    }
+}
 
 function openAddModal() {
     currentEmail = null;
@@ -295,6 +336,12 @@ function openAddModal() {
     document.getElementById('password').required = true;
     document.getElementById('password').value = '';
     document.getElementById('passwordHint').classList.remove('hidden');
+    document.getElementById('date_creation').value = '';
+    resetRoleSelect();
+    const dateWrapper = document.getElementById('dateCreationWrapper');
+    if (dateWrapper) {
+        dateWrapper.classList.add('hidden');
+    }
     document.getElementById('userModal').classList.remove('hidden');
 }
 
@@ -327,11 +374,18 @@ function editUser(email) {
                     document.getElementById('nom').value = u.nom;
                     document.getElementById('prenom').value = u.prenom;
                     document.getElementById('email').value = u.email;
+                    document.getElementById('num_tele').value = u.num_tele || '';
                     // Security: Email cannot be changed during edit
                     document.getElementById('email').setAttribute('readonly', 'readonly');
                     document.getElementById('originalEmail').value = u.email;
+                    ensureRoleOption(u.role);
                     document.getElementById('role').value = u.role;
                     document.getElementById('statut_compte').value = u.statut_compte;
+                    const dateWrapper = document.getElementById('dateCreationWrapper');
+                    if (dateWrapper) {
+                        dateWrapper.classList.remove('hidden');
+                    }
+                    document.getElementById('date_creation').value = formatDateTime(u.date_creation);
                     // Password optional for edit
                     document.getElementById('password').value = '';
                     document.getElementById('password').required = false;
@@ -507,6 +561,12 @@ function closeModal() {
     document.getElementById('password').value = '';
     document.getElementById('password').required = false;
     document.getElementById('passwordHint').classList.remove('hidden');
+    document.getElementById('date_creation').value = '';
+    resetRoleSelect();
+    const dateWrapper = document.getElementById('dateCreationWrapper');
+    if (dateWrapper) {
+        dateWrapper.classList.add('hidden');
+    }
     currentEmail = null;
 }
 

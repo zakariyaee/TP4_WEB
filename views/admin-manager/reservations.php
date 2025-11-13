@@ -1,6 +1,6 @@
 <?php
 require_once '../../config/database.php';
-require_once '../../actions/admin-manager/reservation/validate_reservation.php'; // Inclusion du fichier d'action
+require_once '../../actions/admin-manager/reservation/validate_reservation.php';
 
 // Récupérer les filtres depuis la session
 $filterDate = $_SESSION['currentFilters']['date'] ?? '';
@@ -57,6 +57,7 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                         <h3 id="stat-total-revenue" class="text-3xl font-bold text-green-600">0.00 DH</h3>
                     </div>
                 </div>
+
                 <!-- Filters & Search -->
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -116,13 +117,12 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Prix</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Extras</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Statut</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
                                 <?php if (empty($_SESSION['reservationDetail'])): ?>
                                     <tr>
-                                        <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                        <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                             <i class="fas fa-inbox text-4xl mb-3 block"></i>
                                             <p class="text-lg font-medium">Aucune réservation trouvée</p>
                                             <?php if (!empty($filterDate) || !empty($filterStatus) || !empty($searchQuery)): ?>
@@ -131,94 +131,71 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                   <?php foreach ($_SESSION['reservationDetail'] as $reservation): ?>
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-medium text-gray-900">#<?= $reservation['id_reservation'] ?></span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-900"><?= htmlspecialchars($reservation['nom'] . ' ' . $reservation['prenom']) ?></span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-600"><?= htmlspecialchars($reservation['nom_terrain']) ?></span>
-                                    <br>
-                                    <span class="text-xs text-gray-500"><?= htmlspecialchars($reservation['categorie_terrain']) ?></span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-900"><?= date('d/m/Y', strtotime($reservation['date_debut'])) ?></span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-900"><?= substr($reservation['heure_debut'], 0, 5) ?> - <?= substr($reservation['heure_fin'], 0, 5) ?></span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-900"><?= $reservation['duree'] ?>h</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm">
-                                        <div class="font-medium text-gray-900"><?= number_format($reservation['prix_total'], 2) ?> DH</div>
-                                        <div class="text-xs text-gray-500">
-                                            Terrain: <?= number_format($reservation['prix_terrain'], 2) ?> DH
-                                            <?php if ($reservation['prix_extras'] > 0): ?>
-                                                <br>Extras: <?= number_format($reservation['prix_extras'], 2) ?> DH
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php if (!empty($reservation['extras'])): ?>
-                                        <?php foreach (explode(', ', $reservation['extras']) as $extra): ?>
-                                            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1 mb-1">
-                                                <?= htmlspecialchars($extra) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <span class="text-sm text-gray-500">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <?php
-                                    $statusClasses = [
-                                        'confirmee' => 'bg-blue-100 text-blue-700',
-                                        'en_attente' => 'bg-yellow-100 text-yellow-700',
-                                        'terminee' => 'bg-green-100 text-green-700',
-                                        'annulee' => 'bg-red-100 text-red-700'
-                                    ];
-                                    $statusLabels = [
-                                        'confirmee' => 'Confirmée',
-                                        'en_attente' => 'En attente',
-                                        'terminee' => 'Terminée',
-                                        'annulee' => 'Annulée'
-                                    ];
-                                    ?>
-                                    <span class="px-3 py-1 <?= $statusClasses[$reservation['statut']] ?> rounded-full text-xs font-medium">
-                                        <?= $statusLabels[$reservation['statut']] ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="flex gap-2">
-                                        <?php if ($reservation['statut'] === 'en_attente'): ?>
-                                            <button onclick="validateReservation(<?= $reservation['id_reservation'] ?>)" 
-                                                    class="text-green-600 hover:text-green-700" 
-                                                    title="Valider">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                        <?php if ($reservation['statut'] !== 'annulee' && $reservation['statut'] !== 'terminee'): ?>
-                                            <button onclick="cancelReservation(<?= $reservation['id_reservation'] ?>)" 
-                                                    class="text-red-600 hover:text-red-700" 
-                                                    title="Annuler">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                        <button onclick="viewDetails(<?= $reservation['id_reservation'] ?>)" 
-                                                class="text-blue-600 hover:text-blue-700" 
-                                                title="Détails">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+                                    <?php foreach ($_SESSION['reservationDetail'] as $reservation): ?>
+                                        <tr class="hover:bg-gray-50 transition">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm font-medium text-gray-900">#<?= $reservation['id_reservation'] ?></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm text-gray-900"><?= htmlspecialchars($reservation['nom'] . ' ' . $reservation['prenom']) ?></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm text-gray-600"><?= htmlspecialchars($reservation['nom_terrain']) ?></span>
+                                                <br>
+                                                <span class="text-xs text-gray-500"><?= htmlspecialchars($reservation['categorie_terrain']) ?></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm text-gray-900"><?= date('d/m/Y', strtotime($reservation['date_debut'])) ?></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm text-gray-900"><?= substr($reservation['heure_debut'], 0, 5) ?> - <?= substr($reservation['heure_fin'], 0, 5) ?></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-sm text-gray-900"><?= $reservation['duree'] ?>h</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm">
+                                                    <div class="font-medium text-gray-900"><?= number_format($reservation['prix_total'], 2) ?> DH</div>
+                                                    <div class="text-xs text-gray-500">
+                                                        Terrain: <?= number_format($reservation['prix_terrain'], 2) ?> DH
+                                                        <?php if ($reservation['prix_extras'] > 0): ?>
+                                                            <br>Extras: <?= number_format($reservation['prix_extras'], 2) ?> DH
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <?php if (!empty($reservation['extras'])): ?>
+                                                    <?php foreach (explode(', ', $reservation['extras']) as $extra): ?>
+                                                        <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs mr-1 mb-1">
+                                                            <?= htmlspecialchars($extra) ?>
+                                                        </span>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <span class="text-sm text-gray-500">-</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <?php
+                                                $statusClasses = [
+                                                    'confirmee' => 'bg-blue-100 text-blue-700',
+                                                    'en_attente' => 'bg-yellow-100 text-yellow-700',
+                                                    'terminee' => 'bg-green-100 text-green-700',
+                                                    'annulee' => 'bg-red-100 text-red-700'
+                                                ];
+                                                $statusLabels = [
+                                                    'confirmee' => 'Confirmée',
+                                                    'en_attente' => 'En attente',
+                                                    'terminee' => 'Terminée',
+                                                    'annulee' => 'Annulée'
+                                                ];
+                                                ?>
+                                                <span class="px-3 py-1 <?= $statusClasses[$reservation['statut']] ?> rounded-full text-xs font-medium">
+                                                    <?= $statusLabels[$reservation['statut']] ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -246,7 +223,6 @@ $searchQuery = $_SESSION['currentFilters']['search'] ?? '';
                     Confirmer
                 </button>
             </div>
-            
         </div>
     </div>
 

@@ -19,14 +19,11 @@ header('Content-Type: application/json');
 try {
     $searchTerm = $_GET['search'] ?? '';
     $filterStatus = $_GET['statut'] ?? '';
-    $filterType = $_GET['type'] ?? '';
     
     // Adapt to actual DB columns: nom_t, categorie, size, date_debut, date_fin
-    // Return aliases expected by frontend: nom_tournoi, type_tournoi, nb_equipes
     $sql = "SELECT 
                 t.id_tournoi,
                 t.nom_t AS nom_tournoi,
-                t.categorie AS type_tournoi,
                 t.date_debut,
                 t.date_fin,
                 t.size AS nb_equipes,
@@ -58,10 +55,6 @@ try {
         $params[':statut'] = $filterStatus;
     }
     
-    if (!empty($filterType)) {
-        $sql .= " AND t.categorie = :type";
-        $params[':type'] = $filterType;
-    }
     
     $sql .= " ORDER BY t.date_debut DESC, t.id_tournoi DESC";
     

@@ -27,7 +27,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 $idTournoi = intval($data['id_tournoi'] ?? 0);
 $nomTournoi = trim($data['nom_tournoi'] ?? '');
-$typeTournoi = trim($data['type_tournoi'] ?? '');
+$typeTournoi = isset($data['type_tournoi']) && $data['type_tournoi'] !== '' ? trim($data['type_tournoi']) : null;
 $dateDebut = $data['date_debut'] ?? '';
 $dateFin = $data['date_fin'] ?? '';
 $nbEquipes = intval($data['nb_equipes'] ?? 0);
@@ -41,11 +41,6 @@ if ($idTournoi <= 0) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'ID de tournoi invalide']);
     exit;
-}
-
-// Default value for type_tournoi if not provided
-if (empty($typeTournoi)) {
-    $typeTournoi = 'Open';
 }
 
 // Validation

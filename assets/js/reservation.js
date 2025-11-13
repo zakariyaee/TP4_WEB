@@ -1,29 +1,21 @@
-
-
+// ============================================
 // 1. VARIABLES GLOBALES
 // ============================================
-// Stockage des éléments DOM pour les statistiques
 const ReservationStatsEls = {
   totalReservations: document.getElementById('stat-total-reservations'),
   confirmedReservations: document.getElementById('stat-confirmed-reservations'),
   pendingReservations: document.getElementById('stat-pending-reservations'),
   totalRevenue: document.getElementById('stat-total-revenue'),
-  tableBody: document.querySelector('tbody') // Corps du tableau des réservations
+  tableBody: document.querySelector('tbody')
 };
 
-// Timeout pour le debounce de la recherche
 let searchTimeout;
-
-// Intervalle pour le rafraîchissement automatique
 let refreshInterval;
 
 
-// 2. FONCTION PRINCIPALE : CHARGEMENT DES RÉSERVATIONS
 // ============================================
-/**
- * Récupère les réservations depuis le serveur via AJAX
- * et met à jour l'interface utilisateur
- */
+// 2. CHARGEMENT DES RÉSERVATIONS
+// ============================================
 function loadReservations() {
   const xhr = new XMLHttpRequest();
   
@@ -40,7 +32,7 @@ function loadReservations() {
   const url = '../../actions/admin-manager/reservation/ajax_load_reservations.php?' + params.toString();
   
   xhr.open('GET', url, true);
-  xhr.withCredentials = true; // Important pour les sessions PHP
+  xhr.withCredentials = true;
   
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
@@ -49,12 +41,8 @@ function loadReservations() {
           const response = JSON.parse(xhr.responseText);
           
           if (response.success) {
-            // Mise à jour des statistiques
             updateReservationStats(response.stats);
-            
-            // Mise à jour du tableau des réservations
             updateReservationTable(response.reservations);
-            
             console.log('✅ Réservations chargées avec succès');
           } else {
             console.error('❌ Erreur dans la réponse:', response.message);
@@ -80,7 +68,9 @@ function loadReservations() {
 }
 
 
+// ============================================
 // 3. MISE À JOUR DES STATISTIQUES
+// ============================================
 function updateReservationStats(stats) {
   if (ReservationStatsEls.totalReservations && typeof stats.total !== 'undefined') {
     ReservationStatsEls.totalReservations.textContent = stats.total;
@@ -100,8 +90,9 @@ function updateReservationStats(stats) {
 }
 
 
-// 4. MISE À JOUR DU TABLEAU DES RÉSERVATIONS
-
+// ============================================
+// 4. MISE À JOUR DU TABLEAU
+// ============================================
 function updateReservationTable(reservations) {
   const tbody = ReservationStatsEls.tableBody;
   
@@ -114,7 +105,7 @@ function updateReservationTable(reservations) {
   if (!reservations || reservations.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+        <td colspan="9" class="px-6 py-12 text-center text-gray-500">
           <i class="fas fa-inbox text-4xl mb-3 block"></i>
           <p class="text-lg font-medium">Aucune réservation trouvée</p>
           <p class="text-sm mt-2">Essayez de modifier vos filtres</p>
@@ -134,10 +125,10 @@ function updateReservationTable(reservations) {
 }
 
 
-// 5. CONSTRUCTION D'UNE LIGNE DE RÉSERVATION
-
+// ============================================
+// 5. CONSTRUCTION D'UNE LIGNE
+// ============================================
 function buildReservationRow(reservation) {
-  // Configuration des badges de statut
   const statusClasses = {
     'confirmee': 'bg-blue-100 text-blue-700',
     'en_attente': 'bg-yellow-100 text-yellow-700',
@@ -172,34 +163,6 @@ function buildReservationRow(reservation) {
   if (parseFloat(reservation.prix_extras) > 0) {
     priceDetail += `<br>Extras: ${parseFloat(reservation.prix_extras).toFixed(2)} DH`;
   }
-  
-  // Boutons d'action selon le statut
-  let actionsHtml = '';
-  if (reservation.statut === 'en_attente') {
-    actionsHtml += `
-      <button onclick="validateReservation(${reservation.id_reservation})" 
-              class="text-green-600 hover:text-green-700" 
-              title="Valider">
-        <i class="fas fa-check"></i>
-      </button>
-    `;
-  }
-  if (reservation.statut !== 'annulee' && reservation.statut !== 'terminee') {
-    actionsHtml += `
-      <button onclick="cancelReservation(${reservation.id_reservation})" 
-              class="text-red-600 hover:text-red-700" 
-              title="Annuler">
-        <i class="fas fa-times"></i>
-      </button>
-    `;
-  }
-  actionsHtml += `
-    <button onclick="viewDetails(${reservation.id_reservation})" 
-            class="text-blue-600 hover:text-blue-700" 
-            title="Détails">
-      <i class="fas fa-eye"></i>
-    </button>
-  `;
   
   return `
     <tr class="hover:bg-gray-50 transition">
@@ -237,90 +200,17 @@ function buildReservationRow(reservation) {
           ${statusLabels[reservation.statut]}
         </span>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm">
-        <div class="flex gap-2">
-          ${actionsHtml}
-        </div>
-      </td>
     </tr>
   `;
 }
 
 
-// 6. ACTIONS SUR LES RÉSERVATIONS
-function validateReservation(id) {
-  showModal('Voulez-vous confirmer cette réservation ?', () => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '../../actions/admin-manager/reservation/ajax_validate_reservation.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    
-    xhr.onload = function() {
-      if (xhr.status === 200) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          if (response.success) {
-            showNotification('Réservation confirmée avec succès', 'success');
-            // envoyer message au serveur navigauteur pour recharger la page
-            //loadReservations();
-            localStorage.setItem('update_reservations', Date.now());
-          } else {
-            showNotification(response.message || 'Erreur lors de la validation', 'error');
-          }
-        } catch (e) {
-          showNotification('Erreur lors de la validation', 'error');
-        }
-      }
-    };
-    
-    xhr.send(JSON.stringify({ id_reservation: id, action: 'validate' }));
-  });
-}
-
-// Annuler une réservation
-function cancelReservation(id) {
-  showModal('Voulez-vous annuler cette réservation ?', () => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '../../actions/admin-manager/reservation/ajax_validate_reservation.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    
-    xhr.onload = function() {
-      if (xhr.status === 200) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          if (response.success) {
-            showNotification('Réservation annulée', 'success');
-            // envoyer message au serveur navigauteur pour recharger la page
-            //loadReservations();
-            localStorage.setItem('update_reservations', Date.now());
-          } else {
-            showNotification(response.message || 'Erreur lors de l\'annulation', 'error');
-          }
-        } catch (e) {
-          showNotification('Erreur lors de l\'annulation', 'error');
-        }
-      }
-    };
-    
-    xhr.send(JSON.stringify({ id_reservation: id, action: 'cancel' }));
-  });
-}
-
-
-function viewDetails(id) {
-  // TODO: Implémenter la vue détaillée
-  console.log('Voir détails réservation:', id);
-  showNotification('Fonctionnalité en cours de développement', 'info');
-}
-
-
-// 7. FILTRES ET RECHERCHE
-
+// ============================================
+// 6. FILTRES ET RECHERCHE
+// ============================================
 function applyFilters() {
   loadReservations();
 }
-
-
- //Réinitialise tous les filtres
 
 function resetFilters() {
   document.getElementById('searchInput').value = '';
@@ -330,7 +220,8 @@ function resetFilters() {
 }
 
 
-// 8. MODAL DE CONFIRMATION
+// ============================================
+// 7. MODAL DE CONFIRMATION
 // ============================================
 function showModal(message, onConfirm) {
   document.getElementById('modalMessage').textContent = message;
@@ -346,7 +237,8 @@ function closeModal() {
 }
 
 
-// 9. NOTIFICATIONS
+// ============================================
+// 8. NOTIFICATIONS
 // ============================================
 function showNotification(message, type = 'info') {
   const notification = document.getElementById('notification');
@@ -364,9 +256,9 @@ function showNotification(message, type = 'info') {
 }
 
 
-// 10. UTILITAIRES
 // ============================================
-
+// 9. UTILITAIRES
+// ============================================
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
@@ -374,7 +266,8 @@ function escapeHtml(text) {
 }
 
 
-// 11. GESTION SIDEBAR (CONSERVÉE DE VOTRE CODE)
+// ============================================
+// 10. GESTION SIDEBAR
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('sidebar');
@@ -442,10 +335,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// 12. ÉVÉNEMENTS ET INITIALISATION
+// ============================================
+// 11. INITIALISATION
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('📋 Initialisation du système de réservations AJAX');
+  console.log('📋 Initialisation du système de réservations');
   
   // Chargement initial des réservations
   loadReservations();
@@ -461,22 +355,15 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Filtrage par statut
   document.getElementById('filterStatus').addEventListener('change', applyFilters);
-  
-  // Rafraîchissement automatique toutes les 5 secondes
-  //refreshInterval = setInterval(loadReservations, 5000);
 });
 
-// 13. SYNCHRONISATION MULTI-ONGLETS
+
+// ============================================
+// 12. SYNCHRONISATION MULTI-ONGLETS
+// ============================================
 window.addEventListener('storage', function(event) {
   if (event.key === 'update_reservations') {
     console.log('🔄 Mise à jour déclenchée depuis un autre onglet');
     loadReservations();
   }
 });
-
-// Arrêter le rafraîchissement automatique si l'utilisateur quitte la page
-// window.addEventListener('beforeunload', () => {
-//   if (refreshInterval) {
-//     clearInterval(refreshInterval);
-//   }
-// });

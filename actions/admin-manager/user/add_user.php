@@ -28,6 +28,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 $nom = trim($data['nom'] ?? '');
 $prenom = trim($data['prenom'] ?? '');
 $userEmail = trim($data['email'] ?? '');
+$numTele = trim($data['num_tele'] ?? '');
 $userRole = trim($data['role'] ?? '');
 $accountStatus = trim($data['statut_compte'] ?? 'actif');
 $userPassword = $data['password'] ?? '';
@@ -41,6 +42,12 @@ if (empty($nom) || empty($prenom) || empty($userEmail) || empty($userRole) || em
 if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Email invalide']);
+    exit;
+}
+
+if (!empty($numTele) && !preg_match('/^[0-9+\s\-]{6,20}$/', $numTele)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Numéro de téléphone invalide']);
     exit;
 }
 
@@ -71,8 +78,8 @@ try {
     $pdo->beginTransaction();
 
     // Insert user record
-    $stmt = $pdo->prepare("INSERT INTO Utilisateur (email, nom, prenom, mot_de_passe, role, statut_compte) VALUES (?,?,?,?,?,?)");
-    $stmt->execute([$userEmail, $nom, $prenom, $hashedPassword, $userRole, $accountStatus ?: 'actif']);
+    $stmt = $pdo->prepare("INSERT INTO Utilisateur (email, nom, prenom, num_tele, mot_de_passe, role, statut_compte) VALUES (?,?,?,?,?,?,?)");
+    $stmt->execute([$userEmail, $nom, $prenom, $numTele !== '' ? $numTele : null, $hashedPassword, $userRole, $accountStatus ?: 'actif']);
 
     // Create player record if role is joueur
     if ($userRole === 'joueur') {

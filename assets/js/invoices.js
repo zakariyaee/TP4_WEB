@@ -276,68 +276,7 @@ function sendFacture(id) {
 }
 
 // ============================================
-// 11. GÉNÉRER TOUTES LES FACTURES
-// ============================================
-document.getElementById('btn-generate-all').addEventListener('click', function() {
-    if (!confirm('Générer les PDF de toutes les factures non générées ?')) return;
-    
-    showNotification('Génération en cours...', 'info');
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '../../actions/admin-manager/generate_all_invoices.php', true);
-    xhr.withCredentials = true;
-    
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    showNotification(`${response.count} factures générées`, 'success');
-                    loadFactures();
-                } else {
-                    showNotification(response.message || 'Erreur', 'error');
-                }
-            } catch (e) {
-                showNotification('Erreur de traitement', 'error');
-            }
-        }
-    };
-    
-    xhr.send();
-});
-
-// ============================================
-// 12. RELANCER LES IMPAYÉS
-// ============================================
-document.getElementById('btn-send-reminders').addEventListener('click', function() {
-    if (!confirm('Envoyer un rappel à tous les clients avec factures impayées ?')) return;
-    
-    showNotification('Envoi des rappels en cours...', 'info');
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '../../actions/admin-manager/send_payment_reminders.php', true);
-    xhr.withCredentials = true;
-    
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    showNotification(`${response.count} rappels envoyés`, 'success');
-                } else {
-                    showNotification(response.message || 'Erreur', 'error');
-                }
-            } catch (e) {
-                showNotification('Erreur de traitement', 'error');
-            }
-        }
-    };
-    
-    xhr.send();
-});
-
-// ============================================
-// 13. RECHERCHE ET FILTRES
+// 11. RECHERCHE ET FILTRES
 // ============================================
 document.getElementById('search-input').addEventListener('input', applyFilters);
 document.getElementById('filter-statut').addEventListener('change', applyFilters);

@@ -29,7 +29,6 @@ try {
     $sql = "SELECT 
                 t.id_tournoi,
                 t.nom_t AS nom_tournoi,
-                t.categorie AS type_tournoi,
                 t.date_debut,
                 t.date_fin,
                 t.size AS nb_equipes,

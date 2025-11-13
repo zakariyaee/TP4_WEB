@@ -33,7 +33,7 @@ try {
     $params = [];
 
     if (!empty($searchTerm)) {
-        $whereClause .= " AND (nom LIKE :s OR prenom LIKE :s OR email LIKE :s)";
+        $whereClause .= " AND (nom LIKE :s OR prenom LIKE :s OR email LIKE :s OR num_tele LIKE :s)";
         $params[':s'] = "%$searchTerm%";
     }
     if (!empty($filterRole)) {
@@ -53,7 +53,7 @@ try {
     $totalPages = ceil($totalUsers / $limit);
 
     // Get paginated users with optimized query
-    $sql = "SELECT email, nom, prenom, role, statut_compte 
+    $sql = "SELECT email, nom, prenom, num_tele, role, statut_compte, DATE_FORMAT(date_creation, '%Y-%m-%d %H:%i:%s') AS date_creation 
             FROM Utilisateur $whereClause 
             ORDER BY FIELD(role, 'admin','responsable','joueur'), nom, prenom 
             LIMIT :limit OFFSET :offset";
