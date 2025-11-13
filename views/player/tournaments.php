@@ -436,7 +436,7 @@ $pageData = [
 
     <!-- Create Tournament Modal -->
     <div id="createTournamentModal" class="fixed inset-0 hidden z-50 bg-black/40 backdrop-blur flex items-center justify-center px-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900">Créer un tournoi</h2>
@@ -444,7 +444,7 @@ $pageData = [
                 </div>
                 <button class="text-gray-400 hover:text-gray-600 text-2xl leading-none" data-close-modal="createTournamentModal">&times;</button>
             </div>
-            <form id="createTournamentForm" class="p-8 space-y-5 overflow-y-auto">
+            <form id="createTournamentForm" class="p-8 space-y-5 overflow-y-auto flex-1 min-h-0">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Nom du tournoi *</label>
