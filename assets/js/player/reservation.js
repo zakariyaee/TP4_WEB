@@ -542,10 +542,28 @@ function confirmReservation() {
         .then(result => {
             console.log('Résultat:', result);
             if (result.success) {
-                // Nettoyer le localStorage
+                // Nettoyer le localStorage de la réservation
                 localStorage.removeItem('reservation_data');
-                // Rediriger directement sans message
-                window.location.href = 'my-reservations.php';
+                
+                // Stocker la notification dans le localStorage
+                const notification = {
+                    type: result.notification?.type || 'success',
+                    title: result.notification?.title || 'Réservation confirmée !',
+                    message: result.notification?.message || 'Votre réservation a été créée avec succès',
+                    id_reservation: result.id_reservation,
+                    id_facture: result.id_facture,
+                    numero_facture: result.numero_facture,
+                    prix_total: result.prix_total,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('reservation_success', JSON.stringify(notification));
+                
+                // Déclencher un événement pour notifier les autres onglets
+                localStorage.setItem('update_reservations', Date.now().toString());
+                
+                
+                
             } else {
                 alert('Erreur: ' + result.message);
                 btn.disabled = false;

@@ -19,39 +19,77 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 }
 
 $id_facture = intval($_GET['id']);
+$userRole = $_SESSION['user_role'];
+$userEmail = $_SESSION['user_email'];
 
 try {
-    // Récupérer les détails de la facture
-    $sql = "SELECT 
-                f.*,
-                e.nom_equipe,
-                e.email_equipe,
-                u.email as email_client,
-                u.nom as nom_client,
-                u.prenom as prenom_client,
-                u.num_tele,
-                t.nom_te as nom_terrain,
-                t.localisation,
-                r.date_reservation,
-                r.id_creneau,
-                c.heure_debut,
-                c.heure_fin,
-                CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
-            FROM facture f
-            LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
-            LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
-            LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
-            LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
-            LEFT JOIN utilisateur u ON r.id_joueur = u.email
-            WHERE f.id_facture = :id_facture";
+    // Récupérer les détails de la facture avec vérification des permissions
+    if ($userRole === 'responsable') {
+        // RESPONSABLE : Vérifier que la facture concerne un de ses terrains
+        $sql = "SELECT 
+                    f.*,
+                    e.nom_equipe,
+                    e.email_equipe,
+                    u.email as email_client,
+                    u.nom as nom_client,
+                    u.prenom as prenom_client,
+                    u.num_tele,
+                    t.nom_te as nom_terrain,
+                    t.localisation,
+                    t.id_responsable,
+                    r.date_reservation,
+                    r.id_creneau,
+                    c.heure_debut,
+                    c.heure_fin,
+                    CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
+                FROM facture f
+                LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
+                LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
+                LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
+                LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
+                LEFT JOIN utilisateur u ON r.id_joueur = u.email
+                WHERE f.id_facture = :id_facture 
+                AND t.id_responsable = :email";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'id_facture' => $id_facture,
+            'email' => $userEmail
+        ]);
+    } else {
+        // ADMIN : Accès à toutes les factures
+        $sql = "SELECT 
+                    f.*,
+                    e.nom_equipe,
+                    e.email_equipe,
+                    u.email as email_client,
+                    u.nom as nom_client,
+                    u.prenom as prenom_client,
+                    u.num_tele,
+                    t.nom_te as nom_terrain,
+                    t.localisation,
+                    r.date_reservation,
+                    r.id_creneau,
+                    c.heure_debut,
+                    c.heure_fin,
+                    CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
+                FROM facture f
+                LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
+                LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
+                LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
+                LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
+                LEFT JOIN utilisateur u ON r.id_joueur = u.email
+                WHERE f.id_facture = :id_facture";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['id_facture' => $id_facture]);
+    }
     
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['id_facture' => $id_facture]);
     $facture = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$facture) {
         http_response_code(404);
-        exit('Facture introuvable');
+        exit('Facture introuvable ou accès non autorisé');
     }
     
     // Récupérer les objets de la réservation
@@ -203,7 +241,7 @@ try {
     </body>
     </html>';
     
-    // Configurer et générer le PDF avec Dompdf
+    // Générer le PDF avec Dompdf
     $options = new Options();
     $options->set('isHtml5ParserEnabled', true);
     $options->set('isRemoteEnabled', true);

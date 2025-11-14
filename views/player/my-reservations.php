@@ -64,7 +64,7 @@ try {
         LEFT JOIN equipe e2 ON r.id_equipe_adverse = e2.id_equipe
         
         WHERE r.id_joueur = :email
-        AND r.statut IN ('confirmee', 'en_attente')
+        AND r.statut IN ('confirmee', 'annulee')
         AND DATE(r.date_reservation) >= CURDATE()
         
         ORDER BY r.date_reservation ASC
@@ -141,7 +141,7 @@ try {
 // Statistiques
 $nb_prochaines = count($prochaines);
 $nb_confirmees = count(array_filter($prochaines, fn($r) => $r['statut'] === 'confirmee'));
-$nb_en_attente = count(array_filter($prochaines, fn($r) => $r['statut'] === 'en_attente'));
+$nb_en_attente = count(array_filter($prochaines, fn($r) => $r['statut'] === 'annulee'));
 $nb_historiques = count($historique);
 ?>
 <!DOCTYPE html>
@@ -262,89 +262,119 @@ $nb_historiques = count($historique);
             </div>
         </div>
 
-        <!-- Section : Prochaines réservations -->
-        <div id="section-prochaines" class="space-y-4">
-            <?php if (!empty($prochaines)) : ?>
-                <?php foreach ($prochaines as $r) : ?>
-                    <div class="bg-white rounded-xl shadow-md p-6 fade-in">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($r['nom_terrain']) ?></h3>
-                                    <span class="px-3 py-1 rounded-full text-sm font-medium <?= $r['statut'] === 'confirmee' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' ?>">
-                                        <?= $r['statut'] === 'confirmee' ? 'Confirmée' : 'En attente' ?>
+       <!-- Section : Prochaines réservations -->
+<div id="section-prochaines" class="space-y-4">
+    <?php if (!empty($prochaines)) : ?>
+        <?php foreach ($prochaines as $r) : ?>
+            <?php 
+            // CORRECTION: Vérifier si la modification est possible (plus de 2 jours restants)
+            // On utilise STRICTEMENT > 2 pour bloquer si <= 2 jours (donc moins de 48h)
+            $canModify = isset($r['jours_restants']) && $r['jours_restants'] > 2 && $r['statut'] === 'confirmee';
+            $canCancel = isset($r['jours_restants']) && $r['jours_restants'] > 2 && $r['statut'] === 'confirmee';
+            
+            // Debug (à retirer en production)
+            // error_log("Réservation {$r['id_reservation']} - Jours restants: {$r['jours_restants']}, CanModify: " . ($canModify ? 'Oui' : 'Non'));
+            ?>
+            <div class="bg-white rounded-xl shadow-md p-6 fade-in">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars($r['nom_terrain']) ?></h3>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium <?= $r['statut'] === 'confirmee' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' ?>">
+                                <?= $r['statut'] === 'confirmee' ? 'Confirmée' : 'Annulée' ?>
                             </span>
                         </div>
 
                         <div class="flex items-center gap-4 mb-4 text-gray-600">
                             <div class="flex items-center gap-2">
-                                        <i class="fas fa-calendar text-emerald-600"></i>
-                                        <span><?= $r['date_formatted'] ?? date('d/m/Y', strtotime($r['date_reservation'])) ?></span>
+                                <i class="fas fa-calendar text-emerald-600"></i>
+                                <span><?= $r['date_formatted'] ?? date('d/m/Y', strtotime($r['date_reservation'])) ?></span>
                             </div>
                             <div class="flex items-center gap-2">
-                                        <i class="fas fa-clock text-emerald-600"></i>
+                                <i class="fas fa-clock text-emerald-600"></i>
                                 <span><?= substr($r['heure_debut'], 0, 5) ?> - <?= substr($r['heure_fin'], 0, 5) ?></span>
                             </div>
-                                    <?php if (!empty($r['localisation'])) : ?>
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-map-marker-alt text-emerald-600"></i>
-                                        <span><?= htmlspecialchars($r['localisation']) ?></span>
-                                    </div>
-                                    <?php endif; ?>
+                            <?php if (!empty($r['localisation'])) : ?>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-map-marker-alt text-emerald-600"></i>
+                                <span><?= htmlspecialchars($r['localisation']) ?></span>
+                            </div>
+                            <?php endif; ?>
                         </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    <div>
-                                        <span class="text-gray-600 text-sm">Votre équipe:</span>
-                                        <p class="font-medium text-gray-900"><?= htmlspecialchars($r['nom_equipe_joueur'] ?? '-') ?></p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <span class="text-gray-600 text-sm">Votre équipe:</span>
+                                <p class="font-medium text-gray-900"><?= htmlspecialchars($r['nom_equipe_joueur'] ?? '-') ?></p>
                             </div>
-                                    <div>
-                                        <span class="text-gray-600 text-sm">Équipe adverse:</span>
-                                        <p class="font-medium text-gray-900"><?= htmlspecialchars($r['nom_equipe_adverse'] ?? '—') ?></p>
+                            <div>
+                                <span class="text-gray-600 text-sm">Équipe adverse:</span>
+                                <p class="font-medium text-gray-900"><?= htmlspecialchars($r['nom_equipe_adverse'] ?? '—') ?></p>
                             </div>
-                                    <div>
-                                        <span class="text-gray-600 text-sm">Prix total:</span>
-                                        <p class="font-bold text-emerald-600 text-lg"><?= number_format($r['prix_total'], 2, '.', ' ') ?> DH</p>
+                            <div>
+                                <span class="text-gray-600 text-sm">Prix total:</span>
+                                <p class="font-bold text-emerald-600 text-lg"><?= number_format($r['prix_total'], 2, '.', ' ') ?> DH</p>
                             </div>
                         </div>
 
-                                <?php if (isset($r['jours_restants']) && $r['jours_restants'] > 0) : ?>
-                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                                <p class="text-green-700 text-sm">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Modification possible (<?= $r['jours_restants'] ?> jours restants)
-                                </p>
-                            </div>
+                        <?php if (isset($r['jours_restants']) && $r['jours_restants'] >= 0 && $r['statut'] === 'confirmee') : ?>
+                            <?php if ($r['jours_restants'] > 2) : ?>
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                                    <p class="text-green-700 text-sm">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>Modification possible</strong> - Il reste <?= $r['jours_restants'] ?> jour<?= $r['jours_restants'] > 1 ? 's' : '' ?> avant la réservation
+                                    </p>
+                                </div>
+                            <?php else : ?>
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                                    <p class="text-red-700 text-sm font-medium">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        <strong>Modification bloquée</strong> - Moins de 48 heures avant la réservation (<?= $r['jours_restants'] ?> jour<?= $r['jours_restants'] > 1 ? 's' : '' ?> restant<?= $r['jours_restants'] > 1 ? 's' : '' ?>)
+                                    </p>
+                                </div>
+                            <?php endif; ?>
                         <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3 mt-4">
-                            <?php if (isset($r['jours_restants']) && $r['jours_restants'] > 0 && $r['statut'] === 'confirmee') : ?>
-                                <button onclick="editReservation(<?= $r['id_reservation'] ?>)" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium flex items-center justify-center gap-2">
-                                <i class="fas fa-edit"></i> Modifier
-                            </button>
-                            <?php endif; ?>
-                            <?php if ($r['statut'] !== 'annulee' && (isset($r['jours_restants']) && $r['jours_restants'] > 0 || !isset($r['jours_restants']))) : ?>
-                                <button onclick="cancelReservation(<?= $r['id_reservation'] ?>)" class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition font-medium flex items-center justify-center gap-2">
-                                    <i class="fas fa-times"></i> Annuler
-                            </button>
-                            <?php endif; ?>
-                        </div>
                     </div>
-                <?php endforeach; ?>
-            <?php else : ?>
-                <div class="bg-white rounded-xl shadow-md p-12 text-center">
-                    <i class="fas fa-calendar-times text-gray-300 text-6xl mb-4"></i>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Aucune réservation</h3>
-                    <p class="text-gray-600 mb-6">Vous n'avez pas encore de réservations à venir</p>
-                    <a href="reserver.php" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium">
-                        <i class="fas fa-plus"></i>
-                        Réserver un terrain
-                    </a>
                 </div>
-            <?php endif; ?>
+
+                <div class="flex gap-3 mt-4">
+                    <?php if ($canModify) : ?>
+                        <button 
+                            onclick="editReservation(<?= $r['id_reservation'] ?>)" 
+                            class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium flex items-center justify-center gap-2">
+                            <i class="fas fa-edit"></i> Modifier
+                        </button>
+                    <?php endif; ?>
+                    
+                    <?php if ($canCancel) : ?>
+                        <button 
+                            onclick="cancelReservation(<?= $r['id_reservation'] ?>)" 
+                            class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition font-medium flex items-center justify-center gap-2">
+                            <i class="fas fa-times"></i> Annuler
+                        </button>
+                    <?php endif; ?>
+                    
+                    <?php if (!$canModify && !$canCancel && $r['statut'] === 'confirmee') : ?>
+                        <div class="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-center font-medium cursor-not-allowed flex items-center justify-center gap-2">
+                            <i class="fas fa-lock"></i>
+                            Modifications bloquées (moins de 48h)
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php else : ?>
+        <div class="bg-white rounded-xl shadow-md p-12 text-center">
+            <i class="fas fa-calendar-times text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Aucune réservation</h3>
+            <p class="text-gray-600 mb-6">Vous n'avez pas encore de réservations à venir</p>
+            <a href="reserver.php" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium">
+                <i class="fas fa-plus"></i>
+                Réserver un terrain
+            </a>
         </div>
+    <?php endif; ?>
+</div>
 
         <!-- Section : Historique -->
         <div id="section-historique" class="hidden space-y-4">
@@ -435,7 +465,7 @@ $nb_historiques = count($historique);
                     <button onclick="closeEditModal()" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition font-medium">
                         <i class="fas fa-times mr-2"></i>Annuler
                     </button>
-                    <button onclick="saveReservation()" id="saveBtn" class="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium">
+                    <button  onclick="saveReservation()" id="saveBtn" class="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition font-medium">
                         <i class="fas fa-check mr-2"></i>Enregistrer les modifications
                     </button>
                 </div>

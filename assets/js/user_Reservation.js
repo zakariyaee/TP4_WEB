@@ -1,5 +1,6 @@
 // ============================================
 // SCRIPT COMPLET - GESTION DES RÉSERVATIONS UTILISATEUR
+// VERSION CORRIGÉE AVEC displayReservationForm
 // ============================================
 
 // ============================================
@@ -12,7 +13,6 @@ let currentTab = 'prochaines';
 let currentReservationId = null;
 let originalReservationData = null;
 
-// Récupérer les paramètres de l'URL si nécessaire
 const params = new URLSearchParams(window.location.search);
 
 // ============================================
@@ -20,12 +20,8 @@ const params = new URLSearchParams(window.location.search);
 // ============================================
 function switchTab(tab) {
     currentTab = tab;
-    
-    // Mettre à jour les onglets visuellement
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
-    
-    // Afficher/masquer les sections
     document.getElementById('section-prochaines').classList.toggle('hidden', tab !== 'prochaines');
     document.getElementById('section-historique').classList.toggle('hidden', tab !== 'historique');
 }
@@ -41,32 +37,17 @@ function loadStatsReservationUser() {
     xhrStats.withCredentials = true;
     
     xhrStats.onreadystatechange = function() {
-        if (xhrStats.readyState === 4) {
-            if (xhrStats.status === 200) {
-                try {
-                    const response = JSON.parse(xhrStats.responseText);
-                    
-                    if (response.success) {
-                        updateReservationStatsUser(response.stats);
-                        console.log('✅ Statistiques chargées avec succès');
-                    } else {
-                        console.error('❌ Erreur dans la réponse:', response.message);
-                        showNotification('error', response.message || 'Erreur lors du chargement');
-                    }
-                } catch (e) {
-                    console.error('❌ Erreur de parsing JSON:', e, xhrStats.responseText);
-                    showNotification('error', 'Erreur lors du traitement des données');
+        if (xhrStats.readyState === 4 && xhrStats.status === 200) {
+            try {
+                const response = JSON.parse(xhrStats.responseText);
+                if (response.success) {
+                    updateReservationStatsUser(response.stats);
+                    console.log('✅ Statistiques chargées avec succès');
                 }
-            } else {
-                console.error('❌ Erreur HTTP:', xhrStats.status, xhrStats.statusText);
-                showNotification('error', 'Erreur de connexion au serveur');
+            } catch (e) {
+                console.error('❌ Erreur parsing stats:', e);
             }
         }
-    };
-    
-    xhrStats.onerror = function() {
-        console.error('❌ Erreur réseau lors de la requête AJAX');
-        showNotification('error', 'Erreur réseau');
     };
     
     xhrStats.send();
@@ -76,22 +57,14 @@ function loadStatsReservationUser() {
 // 4. MISE À JOUR DES STATISTIQUES
 // ============================================
 function updateReservationStatsUser(stats) {
-    if (stats && typeof stats.prochaine_reservation !== 'undefined') {
-        if (totalReservation) {
-            totalReservation.textContent = stats.prochaine_reservation;
-        }
+    if (totalReservation && stats.prochaine_reservation !== undefined) {
+        totalReservation.textContent = stats.prochaine_reservation;
     }
-    
-    if (stats && typeof stats.reservation_confirmee !== 'undefined') {
-        if (completedReservations) {
-            completedReservations.textContent = stats.reservation_confirmee;
-        }
+    if (completedReservations && stats.reservation_confirmee !== undefined) {
+        completedReservations.textContent = stats.reservation_confirmee;
     }
-    
-    if (stats && typeof stats.reservation_en_attente !== 'undefined') {
-        if (canceledReservations) {
-            canceledReservations.textContent = stats.reservation_en_attente;
-        }
+    if (canceledReservations && stats.reservation_en_attente !== undefined) {
+        canceledReservations.textContent = stats.reservation_en_attente;
     }
 }
 
@@ -106,39 +79,20 @@ function fetchUpcomingReservations() {
     xhrUpcoming.withCredentials = true;
     
     xhrUpcoming.onreadystatechange = function() {
-        if (xhrUpcoming.readyState === 4) {
-            if (xhrUpcoming.status === 200) {
-                try {
-                    const response = JSON.parse(xhrUpcoming.responseText);
-                    
-                    if (response.success) {
-                        // Mise à jour des prochaines réservations
-                        updateFetchReservations(response.prochaines_reservations);
-                        
-                        // Mise à jour de l'historique si présent
-                        if (response.historique) {
-                            updateHistoriqueReservations(response.historique);
-                        }
-                        
-                        console.log('✅ Réservations chargées avec succès');
-                    } else {
-                        console.error('❌ Erreur dans la réponse:', response.message);
-                        showNotification('error', response.message || 'Erreur lors du chargement');
+        if (xhrUpcoming.readyState === 4 && xhrUpcoming.status === 200) {
+            try {
+                const response = JSON.parse(xhrUpcoming.responseText);
+                if (response.success) {
+                    updateFetchReservations(response.prochaines_reservations);
+                    if (response.historique) {
+                        updateHistoriqueReservations(response.historique);
                     }
-                } catch (e) {
-                    console.error('❌ Erreur de parsing JSON:', e, xhrUpcoming.responseText);
-                    showNotification('error', 'Erreur lors du traitement des données');
+                    console.log('✅ Réservations chargées avec succès');
                 }
-            } else {
-                console.error('❌ Erreur HTTP:', xhrUpcoming.status, xhrUpcoming.statusText);
-                showNotification('error', 'Erreur de connexion au serveur');
+            } catch (e) {
+                console.error('❌ Erreur parsing réservations:', e);
             }
         }
-    };
-    
-    xhrUpcoming.onerror = function() {
-        console.error('❌ Erreur réseau lors de la requête AJAX');
-        showNotification('error', 'Erreur réseau');
     };
     
     xhrUpcoming.send();
@@ -149,13 +103,8 @@ function fetchUpcomingReservations() {
 // ============================================
 function updateFetchReservations(data) {
     const sectionProchaines = document.getElementById('section-prochaines');
+    if (!sectionProchaines) return;
     
-    if (!sectionProchaines) {
-        console.error('❌ Section prochaines réservations introuvable');
-        return;
-    }
-    
-    // Si pas de données ou tableau vide
     if (!data || !data.data || data.data.length === 0) {
         sectionProchaines.innerHTML = `
             <div class="bg-white rounded-xl shadow-md p-12 text-center">
@@ -171,45 +120,51 @@ function updateFetchReservations(data) {
         return;
     }
     
-    // Construire le HTML des réservations
     let html = '';
     data.data.forEach(reservation => {
         html += buildReservationCard(reservation);
     });
     
     sectionProchaines.innerHTML = html;
-    
-    // Réattacher les événements aux boutons
-    attachReservationActions();
 }
 
 // ============================================
 // 7. CONSTRUCTION D'UNE CARTE DE RÉSERVATION
 // ============================================
 function buildReservationCard(r) {
-    const statusClass = r.statut === 'confirmee' 
-        ? 'bg-green-100 text-green-700' 
-        : 'bg-orange-100 text-orange-700';
-    
-    const statusLabel = r.statut === 'confirmee' ? 'Confirmée' : 'En attente';
-    
+    const statusClass = r.statut === 'confirmee' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700';
+    const statusLabel = r.statut === 'confirmee' ? 'Confirmée' : 'Annulée';
     const date = new Date(r.date_reservation);
     const dateFormatted = r.date_formatted || date.toLocaleDateString('fr-FR');
     
-    let alertModification = '';
-    if (r.jours_restants && r.jours_restants > 0) {
-        alertModification = `
-            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                <p class="text-green-700 text-sm">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Modification possible (${r.jours_restants} jours restants)
-                </p>
-            </div>
-        `;
-    }
+    const joursRestants = parseInt(r.jours_restants) || 0;
+    const canModify = joursRestants > 2 && r.statut === 'confirmee';
+    const canCancel = joursRestants > 2 && r.statut === 'confirmee';
     
-    const showModifyBtn = r.jours_restants && r.jours_restants > 0 && r.statut === 'confirmee';
-    const showCancelBtn = r.statut !== 'annulee' && (r.jours_restants && r.jours_restants > 0 || !r.jours_restants);
+    console.log(`Réservation ${r.id_reservation}: jours=${joursRestants}, canModify=${canModify}`);
+    
+    let alertModification = '';
+    if (joursRestants >= 0 && r.statut === 'confirmee') {
+        if (joursRestants > 2) {
+            alertModification = `
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <p class="text-green-700 text-sm">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Modification possible</strong> - Il reste ${joursRestants} jour${joursRestants > 1 ? 's' : ''} avant la réservation
+                    </p>
+                </div>
+            `;
+        } else {
+            alertModification = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <p class="text-red-700 text-sm font-medium">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        <strong>Modification bloquée</strong> - Moins de 48 heures avant la réservation (${joursRestants} jour${joursRestants > 1 ? 's' : ''} restant${joursRestants > 1 ? 's' : ''})
+                    </p>
+                </div>
+            `;
+        }
+    }
     
     return `
         <div class="bg-white rounded-xl shadow-md p-6 fade-in">
@@ -217,11 +172,8 @@ function buildReservationCard(r) {
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-2">
                         <h3 class="text-xl font-bold text-gray-900">${escapeHtml(r.nom_terrain)}</h3>
-                        <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">
-                            ${statusLabel}
-                        </span>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${statusLabel}</span>
                     </div>
-
                     <div class="flex items-center gap-4 mb-4 text-gray-600">
                         <div class="flex items-center gap-2">
                             <i class="fas fa-calendar text-emerald-600"></i>
@@ -235,10 +187,8 @@ function buildReservationCard(r) {
                         <div class="flex items-center gap-2">
                             <i class="fas fa-map-marker-alt text-emerald-600"></i>
                             <span>${escapeHtml(r.localisation)}</span>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <span class="text-gray-600 text-sm">Votre équipe:</span>
@@ -253,22 +203,22 @@ function buildReservationCard(r) {
                             <p class="font-bold text-emerald-600 text-lg">${parseFloat(r.prix_total).toFixed(2)} DH</p>
                         </div>
                     </div>
-
                     ${alertModification}
                 </div>
             </div>
-
             <div class="flex gap-3 mt-4">
-                ${showModifyBtn ? `
+                ${canModify ? `
                 <button onclick="editReservation(${r.id_reservation})" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition font-medium flex items-center justify-center gap-2">
                     <i class="fas fa-edit"></i> Modifier
-                </button>
-                ` : ''}
-                ${showCancelBtn ? `
+                </button>` : ''}
+                ${canCancel ? `
                 <button onclick="cancelReservation(${r.id_reservation})" class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition font-medium flex items-center justify-center gap-2">
                     <i class="fas fa-times"></i> Annuler
-                </button>
-                ` : ''}
+                </button>` : ''}
+                ${!canModify && !canCancel && r.statut === 'confirmee' ? `
+                <div class="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-center font-medium cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="fas fa-lock"></i> Modifications bloquées (moins de 48h)
+                </div>` : ''}
             </div>
         </div>
     `;
@@ -279,11 +229,7 @@ function buildReservationCard(r) {
 // ============================================
 function updateHistoriqueReservations(data) {
     const sectionHistorique = document.getElementById('section-historique');
-    
-    if (!sectionHistorique) {
-        console.error('❌ Section historique introuvable');
-        return;
-    }
+    if (!sectionHistorique) return;
     
     if (!data || !data.data || data.data.length === 0) {
         sectionHistorique.innerHTML = `
@@ -308,12 +254,8 @@ function updateHistoriqueReservations(data) {
 // 9. CONSTRUCTION CARTE HISTORIQUE
 // ============================================
 function buildHistoriqueCard(r) {
-    const statusClass = r.statut === 'terminee' 
-        ? 'bg-gray-100 text-gray-700' 
-        : 'bg-red-100 text-red-700';
-    
+    const statusClass = r.statut === 'terminee' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700';
     const statusLabel = r.statut === 'terminee' ? 'Terminée' : (r.statut === 'annulee' ? 'Annulée' : 'Passée');
-    
     const date = new Date(r.date_reservation);
     const dateFormatted = r.date_formatted || date.toLocaleDateString('fr-FR');
     
@@ -323,11 +265,8 @@ function buildHistoriqueCard(r) {
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-2">
                         <h3 class="text-xl font-bold text-gray-900">${escapeHtml(r.nom_terrain)}</h3>
-                        <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">
-                            ${statusLabel}
-                        </span>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${statusLabel}</span>
                     </div>
-
                     <div class="flex items-center gap-4 mb-4 text-gray-600">
                         <div class="flex items-center gap-2">
                             <i class="fas fa-calendar text-gray-500"></i>
@@ -341,10 +280,8 @@ function buildHistoriqueCard(r) {
                         <div class="flex items-center gap-2">
                             <i class="fas fa-map-marker-alt text-gray-500"></i>
                             <span>${escapeHtml(r.localisation)}</span>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <span class="text-gray-600 text-sm">Votre équipe:</span>
@@ -366,20 +303,10 @@ function buildHistoriqueCard(r) {
 }
 
 // ============================================
-// 10. ATTACHER LES ÉVÉNEMENTS AUX BOUTONS
-// ============================================
-function attachReservationActions() {
-    // Les événements sont maintenant gérés via onclick dans le HTML
-    // Pas besoin de réattacher manuellement
-}
-
-// ============================================
-// 11. ANNULER UNE RÉSERVATION
+// 10. ANNULER UNE RÉSERVATION
 // ============================================
 function cancelReservation(id) {
-    if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
-        return;
-    }
+    if (!confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) return;
     
     fetch('../../actions/player/cancel_reservation.php', {
         method: 'POST',
@@ -402,27 +329,16 @@ function cancelReservation(id) {
 }
 
 // ============================================
-// 12. GESTION DU MODAL DE MODIFICATION
+// 11. GESTION DU MODAL DE MODIFICATION
 // ============================================
-
-/**
- * Ouvrir le modal et charger les données de la réservation
- */
 function editReservation(id) {
     currentReservationId = id;
-    
-    // Afficher le modal
     const modal = document.getElementById('editModal');
     modal.classList.remove('hidden');
     modal.classList.add('show');
-    
-    // Charger les données via AJAX
     loadReservationData(id);
 }
 
-/**
- * Charger les données d'une réservation via AJAX
- */
 function loadReservationData(id) {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', '../../actions/player/get_reservation.php?id=' + id, true);
@@ -433,7 +349,6 @@ function loadReservationData(id) {
             if (xhr.status === 200) {
                 try {
                     const response = JSON.parse(xhr.responseText);
-                    
                     if (response.success) {
                         originalReservationData = response.data;
                         displayReservationForm(response.data);
@@ -453,21 +368,15 @@ function loadReservationData(id) {
         }
     };
     
-    xhr.onerror = function() {
-        showNotification('error', 'Erreur réseau');
-        closeEditModal();
-    };
-    
     xhr.send();
 }
 
-/**
- * Afficher le formulaire avec les données de la réservation
- */
+// ============================================
+// 12. AFFICHER LE FORMULAIRE DE MODIFICATION
+// ============================================
 function displayReservationForm(data) {
     const content = document.getElementById('editModalContent');
     
-    // Préparer les options d'équipes
     const equipesOptions = data.equipes_disponibles?.map(equipe => 
         `<option value="${equipe.id_equipe}" ${equipe.id_equipe == data.id_equipe ? 'selected' : ''}>
             ${escapeHtml(equipe.nom_equipe)}
@@ -480,7 +389,6 @@ function displayReservationForm(data) {
         </option>`
     ).join('') || '';
     
-    // Préparer les options de créneaux
     const creneauxOptions = data.creneaux_disponibles?.map(creneau => 
         `<option value="${creneau.id_creneaux}" ${creneau.id_creneaux == data.id_creneau ? 'selected' : ''}>
             ${creneau.heure_debut.substring(0, 5)} - ${creneau.heure_fin.substring(0, 5)}
@@ -489,7 +397,6 @@ function displayReservationForm(data) {
     
     content.innerHTML = `
         <form id="editReservationForm" class="space-y-6">
-            <!-- Informations du terrain (non modifiables) -->
             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <h3 class="font-semibold text-gray-900 mb-3">
                     <i class="fas fa-info-circle text-blue-600 mr-2"></i>
@@ -515,7 +422,6 @@ function displayReservationForm(data) {
                 </div>
             </div>
 
-            <!-- Date de réservation -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-calendar mr-2 text-emerald-600"></i>
@@ -533,7 +439,6 @@ function displayReservationForm(data) {
                 >
             </div>
 
-            <!-- Créneau horaire -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-clock mr-2 text-emerald-600"></i>
@@ -549,7 +454,6 @@ function displayReservationForm(data) {
                 </select>
             </div>
 
-            <!-- Votre équipe -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-users mr-2 text-emerald-600"></i>
@@ -565,7 +469,6 @@ function displayReservationForm(data) {
                 </select>
             </div>
 
-            <!-- Équipe adverse (optionnel) -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-users mr-2 text-gray-600"></i>
@@ -581,7 +484,6 @@ function displayReservationForm(data) {
                 </select>
             </div>
 
-            <!-- Prix estimé -->
             <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
                 <div class="flex items-center justify-between">
                     <span class="text-gray-700 font-medium">Prix total estimé:</span>
@@ -591,22 +493,28 @@ function displayReservationForm(data) {
                 </div>
             </div>
 
-            <!-- Alerte de délai -->
-            ${data.jours_restants > 0 ? `
+            ${data.jours_restants > 2 ? `
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p class="text-blue-700 text-sm">
                         <i class="fas fa-info-circle mr-2"></i>
-                        Vous pouvez modifier cette réservation jusqu'à <strong>${data.jours_restants} jours</strong> avant la date prévue.
+                        Vous pouvez modifier cette réservation. Il reste <strong>${data.jours_restants} jour${data.jours_restants > 1 ? 's' : ''}</strong> avant la date prévue.
                     </p>
                 </div>
-            ` : ''}
+            ` : `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-700 text-sm font-medium">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Attention:</strong> Il reste seulement ${data.jours_restants} jour${data.jours_restants > 1 ? 's' : ''} avant la réservation.
+                    </p>
+                </div>
+            `}
         </form>
     `;
 }
 
-/**
- * Charger les créneaux disponibles pour une date donnée
- */
+// ============================================
+// 13. CHARGER CRÉNEAUX DISPONIBLES
+// ============================================
 function loadAvailableCreneaux(date) {
     if (!originalReservationData) return;
     
@@ -630,12 +538,8 @@ function loadAvailableCreneaux(date) {
     xhr.send();
 }
 
-/**
- * Mettre à jour le select des créneaux
- */
 function updateCreneauxSelect(creneaux) {
     const select = document.getElementById('edit_id_creneau');
-    
     if (!creneaux || creneaux.length === 0) {
         select.innerHTML = '<option value="">Aucun créneau disponible</option>';
         return;
@@ -648,9 +552,9 @@ function updateCreneauxSelect(creneaux) {
     ).join('');
 }
 
-/**
- * Sauvegarder les modifications
- */
+// ============================================
+// 14. SAUVEGARDER LES MODIFICATIONS
+// ============================================
 function saveReservation() {
     if (!currentReservationId) return;
     
@@ -660,12 +564,10 @@ function saveReservation() {
         return;
     }
     
-    // Désactiver le bouton de sauvegarde
     const saveBtn = document.getElementById('saveBtn');
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
     
-    // Préparer les données
     const formData = {
         id_reservation: currentReservationId,
         date_reservation: document.getElementById('edit_date_reservation').value,
@@ -674,7 +576,6 @@ function saveReservation() {
         id_equipe_adverse: document.getElementById('edit_id_equipe_adverse').value || null
     };
     
-    // Envoyer via AJAX
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '../../actions/player/update_reservation.php', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -687,12 +588,10 @@ function saveReservation() {
         if (xhr.status === 200) {
             try {
                 const response = JSON.parse(xhr.responseText);
-                
                 if (response.success) {
                     showNotification('success', 'Réservation modifiée avec succès');
                     closeEditModal();
-                    
-                    // Recharger les données
+                    localStorage.setItem('update_reservationsPlayer', 'true');
                     setTimeout(() => {
                         fetchUpcomingReservations();
                         loadStatsReservationUser();
@@ -709,18 +608,12 @@ function saveReservation() {
         }
     };
     
-    xhr.onerror = function() {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Enregistrer les modifications';
-        showNotification('error', 'Erreur réseau');
-    };
-    
     xhr.send(JSON.stringify(formData));
 }
 
-/**
- * Fermer le modal
- */
+// ============================================
+// 15. FERMER LE MODAL
+// ============================================
 function closeEditModal() {
     const modal = document.getElementById('editModal');
     modal.classList.add('hidden');
@@ -730,7 +623,7 @@ function closeEditModal() {
 }
 
 // ============================================
-// 13. SYSTÈME DE NOTIFICATIONS
+// 16. SYSTÈME DE NOTIFICATIONS
 // ============================================
 function showNotification(type, message) {
     const colors = {
@@ -755,7 +648,7 @@ function showNotification(type, message) {
 }
 
 // ============================================
-// 14. UTILITAIRES
+// 17. UTILITAIRES
 // ============================================
 function escapeHtml(text) {
     if (!text) return '';
@@ -765,7 +658,7 @@ function escapeHtml(text) {
 }
 
 // ============================================
-// 15. INITIALISATION AU CHARGEMENT
+// 18. INITIALISATION AU CHARGEMENT
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📋 Initialisation du système de réservations utilisateur');
@@ -784,10 +677,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// 16. SYNCHRONISATION MULTI-ONGLETS
+// 19. SYNCHRONISATION MULTI-ONGLETS
 // ============================================
 window.addEventListener('storage', function(event) {
-    if (event.key === 'update_reservations') {
+    if (event.key === 'update_reservations' || event.key === 'update_reservationsPlayer') {
         console.log('🔄 Mise à jour depuis un autre onglet');
         loadStatsReservationUser();
         fetchUpcomingReservations();
@@ -795,7 +688,7 @@ window.addEventListener('storage', function(event) {
 });
 
 // ============================================
-// 17. ÉVÉNEMENTS GLOBAUX DU MODAL
+// 20. ÉVÉNEMENTS GLOBAUX DU MODAL
 // ============================================
 
 // Fermer le modal en cliquant en dehors

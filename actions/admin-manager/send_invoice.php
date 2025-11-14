@@ -21,39 +21,77 @@ if (!isset($_POST['id']) || empty($_POST['id'])) {
 }
 
 $id_facture = intval($_POST['id']);
+$userRole = $_SESSION['user_role'];
+$userEmail = $_SESSION['user_email'];
 
 try {
-    // Récupérer les détails de la facture
-    $sql = "SELECT 
-                f.*,
-                e.nom_equipe,
-                e.email_equipe,
-                u.email as email_client,
-                u.nom as nom_client,
-                u.prenom as prenom_client,
-                u.num_tele,
-                t.nom_te as nom_terrain,
-                t.localisation,
-                r.date_reservation,
-                r.id_creneau,
-                c.heure_debut,
-                c.heure_fin,
-                CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
-            FROM facture f
-            LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
-            LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
-            LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
-            LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
-            LEFT JOIN utilisateur u ON r.id_joueur = u.email
-            WHERE f.id_facture = :id_facture";
+    // Récupérer les détails de la facture avec vérification des permissions
+    if ($userRole === 'responsable') {
+        // RESPONSABLE : Vérifier que la facture concerne un de ses terrains
+        $sql = "SELECT 
+                    f.*,
+                    e.nom_equipe,
+                    e.email_equipe,
+                    u.email as email_client,
+                    u.nom as nom_client,
+                    u.prenom as prenom_client,
+                    u.num_tele,
+                    t.nom_te as nom_terrain,
+                    t.localisation,
+                    t.id_responsable,
+                    r.date_reservation,
+                    r.id_creneau,
+                    c.heure_debut,
+                    c.heure_fin,
+                    CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
+                FROM facture f
+                LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
+                LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
+                LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
+                LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
+                LEFT JOIN utilisateur u ON r.id_joueur = u.email
+                WHERE f.id_facture = :id_facture 
+                AND t.id_responsable = :email";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'id_facture' => $id_facture,
+            'email' => $userEmail
+        ]);
+    } else {
+        // ADMIN : Accès à toutes les factures
+        $sql = "SELECT 
+                    f.*,
+                    e.nom_equipe,
+                    e.email_equipe,
+                    u.email as email_client,
+                    u.nom as nom_client,
+                    u.prenom as prenom_client,
+                    u.num_tele,
+                    t.nom_te as nom_terrain,
+                    t.localisation,
+                    r.date_reservation,
+                    r.id_creneau,
+                    c.heure_debut,
+                    c.heure_fin,
+                    CONCAT('INV-', YEAR(f.date_facture), '-', LPAD(f.id_facture, 4, '0')) as numero_facture
+                FROM facture f
+                LEFT JOIN equipe e ON f.id_equipe = e.id_equipe
+                LEFT JOIN reservation r ON f.id_reservation = r.id_reservation
+                LEFT JOIN terrain t ON r.id_terrain = t.id_terrain
+                LEFT JOIN creneau c ON r.id_creneau = c.id_creneaux
+                LEFT JOIN utilisateur u ON r.id_joueur = u.email
+                WHERE f.id_facture = :id_facture";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['id_facture' => $id_facture]);
+    }
     
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['id_facture' => $id_facture]);
     $facture = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$facture) {
         http_response_code(404);
-        exit('Facture introuvable');
+        exit('Facture introuvable ou accès non autorisé');
     }
     
     // Récupérer les objets
@@ -227,16 +265,16 @@ try {
     // Configurer PHPMailer
     $mail = new PHPMailer(true);
     
-    // Configuration SMTP - ADAPTEZ CES VALEURS
+    // Configuration SMTP
     $mail->isSMTP();
-    $mail->Host = 'smtp.gmail.com'; // Exemple: smtp.gmail.com
+    $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'ferdaoussbouchennou@gmail.com'; // Votre email
-    $mail->Password = 'fymfawesumgsdkli'; // Mot de passe d'application
+    $mail->Username = 'ferdaoussbouchennou@gmail.com';
+    $mail->Password = 'fymfawesumgsdkli';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
     $mail->CharSet = 'UTF-8';
-    $mail->SMTPDebug = 0; // 0 = pas de debug, 2 = debug détaillé
+    $mail->SMTPDebug = 0;
     
     // Destinataires
     $mail->setFrom('ferdaoussbouchennou@gmail.com', 'Gestion Terrains');
@@ -254,7 +292,6 @@ try {
             .header { background: #16a34a; color: white; padding: 20px; text-align: center; }
             .content { background: #f9fafb; padding: 20px; margin: 20px 0; }
             .footer { text-align: center; color: #666; font-size: 12px; padding: 20px; }
-            .button { background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; display: inline-block; border-radius: 5px; margin: 10px 0; }
         </style>
     </head>
     <body>
@@ -289,20 +326,6 @@ try {
         </div>
     </body>
     </html>';
-    
-    $mail->AltBody = 'Bonjour ' . $facture['prenom_client'] . ',
-
-Nous vous remercions pour votre réservation.
-
-Numéro de facture : ' . $facture['numero_facture'] . '
-Terrain : ' . $facture['nom_terrain'] . '
-Date : ' . date('d/m/Y', strtotime($facture['date_reservation'])) . '
-Montant total : ' . number_format($facture['montant_total'], 2, ',', ' ') . ' DH
-
-Veuillez trouver ci-joint votre facture en format PDF.
-
-Cordialement,
-Gestion Terrains';
     
     // Attacher le PDF
     $mail->addAttachment($pdfFile, 'facture_' . $facture['numero_facture'] . '.pdf');

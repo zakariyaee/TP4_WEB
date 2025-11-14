@@ -53,7 +53,7 @@ try {
         SELECT COUNT(*) AS reservation_en_attente 
         FROM reservation 
         WHERE id_joueur = :email 
-        AND statut = 'en_attente'
+        AND statut = 'annulee'
         AND date_reservation >= CURDATE()
     ";
     $stmtEnAttente = $pdo->prepare($sqlEnAttente);

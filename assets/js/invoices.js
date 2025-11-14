@@ -20,7 +20,7 @@ function loadFactures() {
                     facturesData = response.factures;
                     filteredData = [...facturesData];
                     
-                    updateStats(response.stats);
+                    //updateStats(response.stats);
                     displayFactures(filteredData);
                 } else {
                     showNotification(response.message || 'Erreur de chargement', 'error');
@@ -42,17 +42,34 @@ function loadFactures() {
 }
 
 // ============================================
-// 3. MISE À JOUR DES STATISTIQUES
+// 3. MISE À JOUR DES STATISTIQUES (3 STATS SEULEMENT)
 // ============================================
 function updateStats(stats) {
-    document.getElementById('stat-total').textContent = stats.total + ' €';
-    document.getElementById('stat-payees').textContent = stats.payees + ' €';
-    document.getElementById('stat-attente').textContent = stats.attente + ' €';
-    document.getElementById('stat-retard').textContent = stats.retard;
+    // Animation de compteur pour chaque stat
+    animateValue('stat-total', 0, stats.total, 1000);
+    animateValue('stat-payees', 0, stats.payees, 1000);
+    animateValue('stat-attente', 0, stats.attente, 1000);
+}
+
+// Fonction d'animation des nombres
+function animateValue(id, start, end, duration) {
+    const element = document.getElementById(id);
+    const range = end - start;
+    const increment = range / (duration / 16); // 60 FPS
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        element.textContent = current.toFixed(2) + ' DH';
+    }, 16);
 }
 
 // ============================================
-// 4. AFFICHAGE DES FACTURES
+// 4. AFFICHAGE DES FACTURES (CORRECTION DUPLICATION)
 // ============================================
 function displayFactures(factures) {
     const tbody = document.getElementById('factures-tbody');
@@ -69,7 +86,16 @@ function displayFactures(factures) {
         return;
     }
     
-    tbody.innerHTML = factures.map(f => createFactureRow(f)).join('');
+    // CORRECTION: Vider complètement le tbody avant de le remplir
+    tbody.innerHTML = '';
+    
+    // Créer les lignes une par une
+    factures.forEach(f => {
+        const row = createFactureRow(f);
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+    
+    // Attacher les événements après avoir créé toutes les lignes
     attachEventListeners();
 }
 
@@ -94,7 +120,7 @@ function createFactureRow(facture) {
             <td class="px-6 py-4 text-slate-600">#${facture.id_reservation}</td>
             <td class="px-6 py-4 text-slate-600">${date}</td>
             <td class="px-6 py-4">
-                <span class="font-semibold text-green-600">${parseFloat(facture.montant_total).toFixed(2)} €</span>
+                <span class="font-semibold text-green-600">${parseFloat(facture.montant_total).toFixed(2)} DH</span>
             </td>
             <td class="px-6 py-4">
                 <span class="px-3 py-1 rounded-full text-xs font-medium ${statut.class}">
@@ -125,7 +151,8 @@ function getStatutBadge(statut) {
     const badges = {
         'payee': { class: 'badge-payee', label: 'Payée' },
         'attente': { class: 'badge-attente', label: 'En attente' },
-        'retard': { class: 'badge-retard', label: 'En retard' }
+        'retard': { class: 'badge-retard', label: 'En retard' },
+        'annulee': { class: 'bg-red-100 text-red-700', label: 'Annulée' }
     };
     return badges[statut] || { class: 'bg-gray-100 text-gray-700', label: statut };
 }
@@ -136,7 +163,9 @@ function getStatutBadge(statut) {
 function attachEventListeners() {
     // Boutons Voir
     document.querySelectorAll('.btn-view').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const row = this.closest('tr');
             const id = row.dataset.id;
             showFactureDetails(id);
@@ -145,7 +174,9 @@ function attachEventListeners() {
     
     // Boutons Télécharger
     document.querySelectorAll('.btn-download').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const row = this.closest('tr');
             const id = row.dataset.id;
             downloadFacture(id);
@@ -154,7 +185,9 @@ function attachEventListeners() {
     
     // Boutons Envoyer
     document.querySelectorAll('.btn-send').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const row = this.closest('tr');
             const id = row.dataset.id;
             sendFacture(id);
@@ -163,7 +196,7 @@ function attachEventListeners() {
 }
 
 // ============================================
-// 8. AFFICHER LES DÉTAILS
+// 8. AFFICHER LES DÉTAILS (AVEC ID FACTURE)
 // ============================================
 function showFactureDetails(id) {
     const facture = facturesData.find(f => f.id_facture == id);
@@ -176,12 +209,22 @@ function showFactureDetails(id) {
         <div class="space-y-6">
             <div class="grid grid-cols-2 gap-4">
                 <div>
+                    <p class="text-sm text-slate-500 mb-1">ID Facture</p>
+                    <p class="font-semibold text-slate-800">#${facture.id_facture}</p>
+                </div>
+                <div>
                     <p class="text-sm text-slate-500 mb-1">Numéro de facture</p>
                     <p class="font-semibold text-slate-800">${facture.numero_facture}</p>
                 </div>
                 <div>
                     <p class="text-sm text-slate-500 mb-1">Date</p>
                     <p class="font-semibold text-slate-800">${new Date(facture.date_facture).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 mb-1">Statut</p>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium ${getStatutBadge(facture.statut_paiement).class}">
+                        ${getStatutBadge(facture.statut_paiement).label}
+                    </span>
                 </div>
             </div>
             
@@ -197,6 +240,7 @@ function showFactureDetails(id) {
             <div class="border-t pt-4">
                 <h4 class="font-semibold text-slate-800 mb-3">Réservation</h4>
                 <div class="space-y-2">
+                    <p><span class="text-slate-500">ID Réservation:</span> #${facture.id_reservation}</p>
                     <p><span class="text-slate-500">Terrain:</span> ${escapeHtml(facture.nom_terrain)}</p>
                     <p><span class="text-slate-500">Date:</span> ${new Date(facture.date_reservation).toLocaleDateString('fr-FR')}</p>
                     <p><span class="text-slate-500">Statut:</span> ${facture.statut_reservation}</p>
@@ -208,19 +252,19 @@ function showFactureDetails(id) {
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span class="text-slate-600">Terrain:</span>
-                        <span class="font-medium">${parseFloat(facture.montant_terrain).toFixed(2)} €</span>
+                        <span class="font-medium">${parseFloat(facture.montant_terrain).toFixed(2)} DH</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-600">Objets:</span>
-                        <span class="font-medium">${parseFloat(facture.montant_objets).toFixed(2)} €</span>
+                        <span class="font-medium">${parseFloat(facture.montant_objets).toFixed(2)} DH</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-600">TVA (${facture.tva}%):</span>
-                        <span class="font-medium">${(parseFloat(facture.montant_total) * parseFloat(facture.tva) / (100 + parseFloat(facture.tva))).toFixed(2)} €</span>
+                        <span class="font-medium">${(parseFloat(facture.montant_total) * parseFloat(facture.tva) / (100 + parseFloat(facture.tva))).toFixed(2)} DH</span>
                     </div>
                     <div class="flex justify-between border-t pt-2 mt-2">
                         <span class="font-semibold text-slate-800">Total TTC:</span>
-                        <span class="font-bold text-green-600 text-xl">${parseFloat(facture.montant_total).toFixed(2)} €</span>
+                        <span class="font-bold text-green-600 text-xl">${parseFloat(facture.montant_total).toFixed(2)} DH</span>
                     </div>
                 </div>
             </div>
@@ -242,7 +286,6 @@ function showFactureDetails(id) {
 // ============================================
 function downloadFacture(id) {
     showNotification('Génération du PDF en cours...', 'info');
-    // Ouvrir dans un nouvel onglet pour télécharger
     window.open(`../../actions/admin-manager/generate_invoice.php?id=${id}`, '_blank');
 }
 
@@ -262,7 +305,7 @@ function sendFacture(id) {
     xhr.onload = function() {
         if (xhr.status === 200) {
             showNotification(xhr.responseText, 'success');
-            loadFactures();
+            loadFactures(); // Recharger les factures
         } else {
             showNotification('Erreur lors de l\'envoi: ' + xhr.responseText, 'error');
         }
@@ -306,7 +349,8 @@ document.getElementById('btn-reset-filters').addEventListener('click', function(
     document.getElementById('search-input').value = '';
     document.getElementById('filter-statut').value = '';
     document.getElementById('filter-paiement').value = '';
-    applyFilters();
+    filteredData = [...facturesData];
+    displayFactures(filteredData);
 });
 
 // ============================================
@@ -345,6 +389,52 @@ function showNotification(message, type = 'info') {
 }
 
 // ============================================
+// 2. CHARGEMENT SÉPARÉ DES STATISTIQUES
+// ============================================
+function loadStats() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '../../actions/admin-manager/load_stats.php', true);
+    xhr.withCredentials = true;
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    updateStats(response.stats);
+                } else {
+                    showNotification(response.message || 'Erreur de chargement des stats', 'error');
+                    // Afficher 0.00 en cas d'erreur
+                    updateStats({ total: 0, payees: 0, attente: 0 });
+                }
+            } catch (e) {
+                console.error('Erreur parsing stats:', e);
+                showNotification('Erreur de traitement des statistiques', 'error');
+                updateStats({ total: 0, payees: 0, attente: 0 });
+            }
+        } else {
+            showNotification('Erreur de connexion au serveur', 'error');
+            updateStats({ total: 0, payees: 0, attente: 0 });
+        }
+    };
+    
+    xhr.onerror = function() {
+        showNotification('Erreur réseau', 'error');
+        updateStats({ total: 0, payees: 0, attente: 0 });
+    };
+    
+    xhr.send();
+}
+
+     //reservation_success
+  window.addEventListener('storage', function(event) {
+    if (event.key === 'reservation_success' ) {
+        console.log('🔄 Mise à jour depuis un autre onglet');
+        loadFactures();
+        loadStats();
+    }
+});
+// ============================================
 // 16. UTILITAIRES
 // ============================================
 function escapeHtml(text) {
@@ -359,8 +449,14 @@ function escapeHtml(text) {
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Initialisation de la gestion des factures');
+    
+    // Charger les stats et les factures en parallèle
+    loadStats();
     loadFactures();
     
-    // Actualisation automatique toutes les 60 secondes
-    setInterval(loadFactures, 60000);
+    // Actualisation automatique
+    setInterval(() => {
+        loadStats();
+        loadFactures();
+    }, 60000);
 });
