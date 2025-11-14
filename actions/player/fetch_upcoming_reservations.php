@@ -95,7 +95,7 @@ try {
         LEFT JOIN equipe e2 ON r.id_equipe_adverse = e2.id_equipe
         
         WHERE r.id_joueur = :email
-        AND r.statut IN ('confirmee', 'en_attente')
+        AND r.statut IN ('confirmee', '')
         AND r.date_reservation >= CURDATE()
             
         ORDER BY r.date_reservation ASC

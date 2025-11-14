@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - TerrainBook</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LeiRAwsAAAAAJfhYsL-v40RYUgO0RR2z91kE2QQ"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Inter', sans-serif; }
@@ -21,6 +23,11 @@
         }
         .message-animate {
             animation: slideDown 0.3s ease-out;
+        }
+        
+        /* Cacher le badge reCAPTCHA (optionnel) */
+        .grecaptcha-badge { 
+            visibility: hidden;
         }
     </style>
 </head>
@@ -109,6 +116,13 @@
                 Se connecter
             </button>
 
+            <!-- Mention reCAPTCHA v3 -->
+            <p class="text-xs text-gray-500 text-center mb-3">
+                Ce site est protégé par reCAPTCHA et soumis à la 
+                <a href="https://policies.google.com/privacy" target="_blank" class="text-emerald-600 hover:underline">Politique de confidentialité</a> et aux 
+                <a href="https://policies.google.com/terms" target="_blank" class="text-emerald-600 hover:underline">Conditions d'utilisation</a> de Google.
+            </p>
+
             <div class="text-center">
                 <a href="../../index.php" class="inline-flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-semibold group">
                     <svg class="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,36 +174,57 @@
             const terrainId = document.getElementById('terrainId').value;
 
             try {
-                const response = await fetch('../../actions/auth/login.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email,
-                        password,
-                        redirect: redirect,
-                        terrain_id: terrainId
-                    })
-                });
+    // Générer le token reCAPTCHA v3
+    const token = await grecaptcha.execute('6LeiRAwsAAAAAJfhYsL-v40RYUgO0RR2z91kE2QQ', {action: 'login'});
+    
+    const response = await fetch('../../actions/auth/login.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email,
+            password,
+            redirect: redirect,
+            terrain_id: terrainId,
+            recaptcha_token: token
+        })
+    });
 
-                const data = await response.json();
+    // Vérifier si la réponse est OK
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+    }
 
-                if (data.success) {
-                    showTopMessage(data.message, 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1500);
-                } else {
-                    showTopMessage(data.message, 'error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }
-            } catch (error) {
-                showTopMessage('Erreur de connexion. Veuillez réessayer.', 'error');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
+    // Essayer de parser le JSON
+    const text = await response.text();
+    console.log('Réponse brute:', text); // Pour debug
+    
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (parseError) {
+        console.error('Erreur parsing JSON:', parseError);
+        console.error('Texte reçu:', text);
+        throw new Error('Réponse invalide du serveur. Vérifiez la console.');
+    }
+
+    if (data.success) {
+        showTopMessage(data.message, 'success');
+        setTimeout(() => {
+            window.location.href = data.redirect;
+        }, 1500);
+    } else {
+        showTopMessage(data.message, 'error');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+} catch (error) {
+    console.error('Erreur complète:', error);
+    showTopMessage('Erreur de connexion. Vérifiez la console pour plus de détails.', 'error');
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+}
         });
 
         function showTopMessage(message, type) {

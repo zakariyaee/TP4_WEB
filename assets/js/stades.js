@@ -549,6 +549,7 @@ function editTerrain(id) {
         const response = JSON.parse(xhr.responseText);
 
         if (response.success) {
+          localStorage.set("terrains_updated_admin");
           const terrain = response.terrain;
 
           document.getElementById("modalTitle").textContent =
@@ -637,6 +638,7 @@ function handleSubmit(e) {
         const response = JSON.parse(xhr.responseText);
 
         if (response.success) {
+          localStorage.setItem("terrains_add", Date.now().toString());
           showNotification(response.message, "success");
           closeModal();
           loadTerrains();
@@ -688,8 +690,9 @@ function confirmDelete() {
     if (xhr.status === 200) {
       try {
         const response = JSON.parse(xhr.responseText);
-
         if (response.success) {
+          // notifier local storage 
+          localStorage.setItem("terrains_delete", Date.now().toString());
           showNotification(response.message, "success");
           closeDeleteModal();
           loadTerrains();
@@ -712,6 +715,12 @@ function confirmDelete() {
     })
   );
 }
+    window.addEventListener('storage', function(event) {
+    if (event.key === 'terrains_delete' || event.key === 'terrains_add') {
+        loadTerrains();
+        notifyOtherTabs(); // ← AJOUTEZ CETTE LIGNE
+    }
+});
 
 // Fermer le modal principal
 function closeModal() {

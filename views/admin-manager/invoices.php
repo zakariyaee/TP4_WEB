@@ -13,6 +13,7 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
     header('Location: ../index.php');
     exit;
 }
+   
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -50,56 +51,48 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
           </div>
         </div>
 
-        <!-- Stats cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-slate-500 text-sm font-medium mb-2">Montant Total</p>
-                <h3 id="stat-total" class="text-3xl font-bold text-slate-800">0 €</h3>
-              </div>
-              <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <i class="fas fa-euro-sign text-blue-600 text-xl"></i>
-              </div>
-            </div>
-          </div>
+        <!-- Stats cards (3 STATS UNIQUEMENT) -->
+        <!-- Stats cards (3 STATS UNIQUEMENT) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <!-- Montant Total -->
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-slate-500 text-sm font-medium mb-2">Montant Total</p>
+        <h3 id="stat-total" class="text-3xl font-bold text-slate-800"></h3>
+      </div>
+      <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+        <i class="fas fa-euro-sign text-blue-600 text-xl"></i>
+      </div>
+    </div>
+  </div>
 
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-slate-500 text-sm font-medium mb-2">Payées</p>
-                <h3 id="stat-payees" class="text-3xl font-bold text-green-600">0 €</h3>
-              </div>
-              <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <i class="fas fa-check-circle text-green-600 text-xl"></i>
-              </div>
-            </div>
-          </div>
+  <!-- Montant Payé -->
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-slate-500 text-sm font-medium mb-2">Montant Payé</p>
+        <h3 id="stat-payees" class="text-3xl font-bold text-green-600"></h3>
+      </div>
+      <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+      </div>
+    </div>
+  </div>
 
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-slate-500 text-sm font-medium mb-2">En Attente</p>
-                <h3 id="stat-attente" class="text-3xl font-bold text-orange-600">0 €</h3>
-              </div>
-              <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <i class="fas fa-clock text-orange-600 text-xl"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-slate-500 text-sm font-medium mb-2">En Retard</p>
-                <h3 id="stat-retard" class="text-3xl font-bold text-red-600">0</h3>
-              </div>
-              <div class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
-                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- Montant Non Payé -->
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-slate-500 text-sm font-medium mb-2">Montant Non Payé</p>
+        <h3 id="stat-attente" class="text-3xl font-bold text-orange-600"></h3>
+      </div>
+      <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+        <i class="fas fa-clock text-orange-600 text-xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Filters and Search -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -127,7 +120,6 @@ if (!in_array($_SESSION['user_role'], ['admin', 'responsable'])) {
               <option value="">Tous les paiements</option>
               <option value="payee">Payée</option>
               <option value="attente">En attente</option>
-              <option value="retard">En retard</option>
             </select>
 
             <button id="btn-reset-filters" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition">

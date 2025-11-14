@@ -13,7 +13,7 @@ try {
         throw new Exception('Données invalides');
     }
     
-    // VÉRIFICATION : Vérifier qu'il reste plus de 2 jours (48h)
+    // VÉRIFICATION IMPORTANTE : Vérifier qu'il reste plus de 2 jours (48h)
     $stmtCheck = $pdo->prepare("
         SELECT 
             id_reservation,
@@ -35,24 +35,31 @@ try {
         throw new Exception('Réservation introuvable');
     }
     
-    if ($reservation['statut'] === 'annulee') {
-        throw new Exception('Cette réservation est déjà annulée');
+    if ($reservation['statut'] !== 'confirmee') {
+        throw new Exception('Cette réservation ne peut pas être modifiée (statut: ' . $reservation['statut'] . ')');
     }
     
     // BLOCAGE SI MOINS DE 48H (jours_restants <= 2)
     if ($reservation['jours_restants'] <= 2) {
-        throw new Exception('Annulation impossible : il reste moins de 48 heures avant la réservation (' . $reservation['jours_restants'] . ' jour(s) restant(s))');
+        throw new Exception('Modification impossible : il reste moins de 48 heures avant la réservation (' . $reservation['jours_restants'] . ' jour(s) restant(s))');
     }
     
-    // Procéder à l'annulation
+    // Procéder à la mise à jour
     $stmt = $pdo->prepare("
         UPDATE reservation 
-        SET statut = 'annulee'
+        SET date_reservation = :date, 
+            id_creneau = :creneau,
+            id_equipe = :equipe, 
+            id_equipe_adverse = :adverse
         WHERE id_reservation = :id 
         AND id_joueur = :email
     ");
     
     $result = $stmt->execute([
+        ':date' => $input['date_reservation'],
+        ':creneau' => $input['id_creneau'],
+        ':equipe' => $input['id_equipe'],
+        ':adverse' => $input['id_equipe_adverse'] ?: null,
         ':id' => $input['id_reservation'],
         ':email' => $email
     ]);
@@ -60,10 +67,10 @@ try {
     if ($result) {
         echo json_encode([
             'success' => true, 
-            'message' => 'Réservation annulée avec succès'
+            'message' => 'Réservation modifiée avec succès'
         ], JSON_UNESCAPED_UNICODE);
     } else {
-        throw new Exception('Échec de l\'annulation');
+        throw new Exception('Échec de la mise à jour');
     }
     
 } catch (Exception $e) {
@@ -72,6 +79,6 @@ try {
         'success' => false, 
         'message' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
-    error_log("Erreur cancel_reservation : " . $e->getMessage());
+    error_log("Erreur update_reservation : " . $e->getMessage());
 }
 ?>

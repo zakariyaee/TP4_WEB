@@ -273,7 +273,6 @@ switch ($terrain['categorie']) {
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
                             </div>
                         </div>
-
                         <div class="mt-8">
                             <h3 class="text-xl font-bold text-gray-900 mb-4">Options supplémentaires</h3>
                             <div id="objets_container" class="grid grid-cols-2 md:grid-cols-4 gap-4">

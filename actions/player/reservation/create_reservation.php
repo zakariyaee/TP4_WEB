@@ -179,6 +179,67 @@ try {
             ':id_terrain' => $data['id_terrain'],
             ':id_creneau' => $data['id_creneau']
         ]);
+
+        // inserer la facture ici 
+        // ========================================
+// CRÉER LA FACTURE AUTOMATIQUEMENT
+// ========================================
+
+            // Calculer les montants pour la facture
+            $montant_terrain = $prix_terrain;
+            $montant_objets = $prix_objets;
+            $tva = 20.00; // TVA à 20%
+            $montant_total = $prix_total;
+
+            // Insérer la facture
+            $stmt_facture = $pdo->prepare("
+                INSERT INTO facture (
+                    date_facture,
+                    montant_total,
+                    montant_terrain,
+                    montant_objets,
+                    tva,
+                    statut,
+                    fichier_pdf,
+                    date_envoi,
+                    id_equipe,
+                    id_reservation,
+                    notes
+                ) VALUES (
+                    NOW(),
+                    :montant_total,
+                    :montant_terrain,
+                    :montant_objets,
+                    :tva,
+                    'generee',
+                    NULL,
+                    NULL,
+                    :id_equipe,
+                    :id_reservation,
+                    :notes
+                )
+            ");
+
+$notes_facture = sprintf(
+    'Réservation du %s - Terrain: %s',
+    date('d/m/Y', strtotime($datetime_reservation)),
+    $terrain['nom_te'] ?? 'Terrain ' . $data['id_terrain']
+);
+
+$stmt_facture->execute([
+    ':montant_total' => $montant_total,
+    ':montant_terrain' => $montant_terrain,
+    ':montant_objets' => $montant_objets,
+    ':tva' => $tva,
+    ':id_equipe' => $id_equipe_finale,
+    ':id_reservation' => $id_reservation,
+    ':notes' => $notes_facture
+]);
+
+$id_facture = $pdo->lastInsertId();
+
+// Générer le numéro de facture
+$numero_facture = 'INV-' . date('Y') . '-' . str_pad($id_facture, 4, '0', STR_PAD_LEFT);
         
         $id_reservation = $pdo->lastInsertId();
         
@@ -198,16 +259,24 @@ try {
         }
         
         // Valider la transaction
-        $pdo->commit();
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Réservation créée avec succès',
-            'id_reservation' => $id_reservation,
-            'prix_terrain' => $prix_terrain,
-            'prix_objets' => $prix_objets,
-            'prix_total' => $prix_total
-        ]);
+       // Valider la transaction
+$pdo->commit();
+
+echo json_encode([
+    'success' => true,
+    'message' => 'Réservation créée avec succès',
+    'id_reservation' => $id_reservation,
+    'id_facture' => $id_facture,
+    'numero_facture' => $numero_facture,
+    'prix_terrain' => $prix_terrain,
+    'prix_objets' => $prix_objets,
+    'prix_total' => $prix_total,
+    'notification' => [
+        'type' => 'success',
+        'title' => 'Réservation confirmée !',
+        'message' => "Votre réservation a été créée avec succès. Facture N° {$numero_facture}"
+    ]
+]);
         
     } catch (Exception $e) {
         $pdo->rollBack();
