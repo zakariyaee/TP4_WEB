@@ -14,6 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         usersCache.clear();
     }, 300000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            loadUsers(currentPage, true);
+        }
+    });
+
+    setInterval(() => {
+        if (!document.hidden) {
+            loadUsers(currentPage, true);
+        }
+    }, 1000);
 });
 
 // ===== English aliases (non-breaking) to follow naming convention =====

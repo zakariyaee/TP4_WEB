@@ -69,8 +69,23 @@ $pageTitle = "Gestion des Tournois";
                 </div>
             </div>
 
-            <!-- Filters and Search Section -->
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <!-- Tabs Section -->
+            <div class="bg-white rounded-lg shadow-sm mb-4">
+                <div class="flex border-b border-gray-200">
+                    <button id="tab-tournaments" onclick="switchTab('tournaments')" class="tab-button active px-6 py-4 font-semibold text-emerald-600 border-b-2 border-emerald-600 transition-colors">
+                        <i class="fas fa-trophy mr-2"></i>
+                        Tournois
+                    </button>
+                    <button id="tab-requests" onclick="switchTab('requests')" class="tab-button px-6 py-4 font-semibold text-gray-600 hover:text-emerald-600 transition-colors">
+                        <i class="fas fa-inbox mr-2"></i>
+                        Demandes en attente
+                        <span id="requestsBadge" class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full hidden">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters and Search Section (for tournaments) -->
+            <div id="filtersSection" class="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">
@@ -94,12 +109,43 @@ $pageTitle = "Gestion des Tournois";
                 </div>
             </div>
 
+            <!-- Filters and Search Section (for requests) -->
+            <div id="filtersRequestsSection" class="bg-white rounded-lg shadow-sm p-4 mb-4 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                            Rechercher
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="searchRequestsInput" placeholder="Nom du tournoi, organisateur..." 
+                                class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                            Statut
+                        </label>
+                        <select id="filterRequestsStatut" class="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none cursor-pointer">
+                            <option value="">Tous les statuts</option>
+                            <option value="en_attente">En attente</option>
+                            <option value="approuvee">Approuvée</option>
+                            <option value="rejetee">Rejetée</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <!-- Notification Message -->
             <div id="notification" class="hidden fixed top-6 right-6 px-6 py-4 rounded-xl shadow-2xl z-50 backdrop-blur-sm animate-slide-in"></div>
 
             <!-- Tournaments List -->
             <div id="tournoisContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                 <!-- Tournaments will be loaded here via AJAX -->
+            </div>
+
+            <!-- Requests List -->
+            <div id="requestsContainer" class="hidden space-y-4 animate-fade-in">
+                <!-- Requests will be loaded here via AJAX -->
             </div>
 
             <!-- Loader -->
@@ -302,7 +348,23 @@ $pageTitle = "Gestion des Tournois";
         </div>
     </div>
 
-    <script src="../../assets/js/tournament.js?v=2"></script>
+    <!-- Request Details Modal -->
+    <div id="requestModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-slide-in">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-6 flex justify-between items-center shadow-lg">
+                <h2 class="text-2xl font-bold">Détails de la demande</h2>
+                <button onclick="closeRequestModal()" class="text-white/80 hover:text-white hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-200">×</button>
+            </div>
+            <div id="requestModalContent" class="p-8 overflow-y-auto flex-1">
+                <!-- Request details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Sync Manager - Load BEFORE other scripts -->
+    <script src="../../assets/js/sync-manager.js"></script>
+    <script src="../../assets/js/tournament.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/tournament.js'); ?>"></script>
+    <script src="../../assets/js/tournament_requests.js?v=<?php echo time(); ?>"></script>
 
 </body>
 

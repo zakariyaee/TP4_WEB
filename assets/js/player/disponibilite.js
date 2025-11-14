@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('storage', handleStorageChange);
     
     // Synchroniser périodiquement avec le serveur
-    setInterval(syncWithServer, 60000); // Vérifier toutes les minutes
+    setInterval(syncWithServer, 1000); // Vérifier toutes les secondes
     
     // Gérer les formulaires
     document.getElementById('form-disponibilite').addEventListener('submit', handleSubmit);

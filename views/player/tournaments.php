@@ -1,276 +1,30 @@
 <?php
 require_once '../../config/database.php';
 require_once '../../check_auth.php';
+require_once '../../includes/player/tournament_helpers.php';
 
 checkJoueur();
 
 $playerEmail = $_SESSION['user_email'] ?? null;
 
-/**
- * Helper to safely fetch query results.
- *
- * @param PDO $pdo
- * @param string $sql
- * @param array $params
- * @return array
- */
-function fetchAllSafe(PDO $pdo, string $sql, array $params = []): array
-{
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log('Player tournaments query error: ' . $e->getMessage());
-        return [];
-    }
-}
+$tournamentData = getPlayerTournamentData($pdo, $playerEmail);
 
-/**
- * Normalize a value to lower-case without accents.
- */
-function normalizeToken(?string $value): string
-{
-    if ($value === null) {
-        return '';
-    }
-
-    $lower = mb_strtolower($value, 'UTF-8');
-    $transliterated = iconv('UTF-8', 'ASCII//TRANSLIT', $lower);
-    return $transliterated !== false ? $transliterated : $lower;
-}
-
-/**
- * Map status key to badge colors.
- */
-function statusBadgeClasses(string $statusKey): string
-{
-    return match ($statusKey) {
-        'ongoing' => 'bg-emerald-100 text-emerald-700',
-        'completed' => 'bg-gray-100 text-gray-600',
-        'cancelled' => 'bg-red-100 text-red-700',
-        default => 'bg-blue-100 text-blue-700',
-    };
-}
-
-/**
- * Format price label.
- */
-function formatPriceLabel($price): string
-{
-    if ($price === null || $price === '') {
-        return 'Gratuit';
-    }
-    $amount = number_format((float) $price, 0, ',', ' ');
-    return $amount . ' DH';
-}
-
-/**
- * Format date range label.
- */
-function formatDateRangeLabel(?DateTimeImmutable $start, ?DateTimeImmutable $end): string
-{
-    if (!$start && !$end) {
-        return 'Dates à confirmer';
-    }
-
-    if ($start && $end) {
-        if ($start->format('Y-m-d') === $end->format('Y-m-d')) {
-            return 'Le ' . $start->format('d/m/Y');
-        }
-        return 'Du ' . $start->format('d/m/Y') . ' au ' . $end->format('d/m/Y');
-    }
-
-    $ref = $start ?? $end;
-    return ($start ? 'À partir du ' : 'Jusqu’au ') . $ref->format('d/m/Y');
-}
-
-/**
- * Compute status key and label.
- */
-function resolveStatus(?string $statut, ?DateTimeImmutable $start, ?DateTimeImmutable $end): array
-{
-    $now = new DateTimeImmutable('now');
-    $statusKey = 'upcoming';
-    $statusLabel = 'À venir';
-
-    $normalized = normalizeToken($statut);
-
-    if ($normalized === 'annule') {
-        return ['cancelled', 'Annulé'];
-    }
-
-    if ($normalized === 'termine') {
-        return ['completed', 'Terminé'];
-    }
-
-    if ($normalized === 'en_cours') {
-        return ['ongoing', 'En cours'];
-    }
-
-    if ($start && $end) {
-        if ($now < $start) {
-            return ['upcoming', 'À venir'];
-        }
-        if ($now > $end) {
-            return ['completed', 'Terminé'];
-        }
-        return ['ongoing', 'En cours'];
-    }
-
-    if ($start) {
-        return $now >= $start ? ['ongoing', 'En cours'] : ['upcoming', 'À venir'];
-    }
-
-    if ($end) {
-        return $now > $end ? ['completed', 'Terminé'] : ['ongoing', 'En cours'];
-    }
-
-    return [$statusKey, $statusLabel];
-}
-
-/**
- * Compute remaining days before start.
- */
-function computeDaysUntil(?DateTimeImmutable $start): ?int
-{
-    if (!$start) {
-        return null;
-    }
-    $now = new DateTimeImmutable('today');
-    if ($start <= $now) {
-        return 0;
-    }
-    return (int) $now->diff($start)->format('%a');
-}
-
-$playerTeams = [];
-if ($playerEmail) {
-    $playerTeams = fetchAllSafe(
-        $pdo,
-        "SELECT DISTINCT e.id_equipe, e.nom_equipe
-         FROM equipe e
-         INNER JOIN equipe_joueur ej ON ej.id_equipe = e.id_equipe
-         WHERE ej.id_joueur = :email
-         ORDER BY e.nom_equipe",
-        [':email' => $playerEmail]
-    );
-}
-
-$playerTeamIds = array_map(static fn($team) => (int) $team['id_equipe'], $playerTeams);
-
-$registeredTournamentIds = [];
-if (!empty($playerTeamIds)) {
-    $placeholders = implode(',', array_fill(0, count($playerTeamIds), '?'));
-    try {
-        $stmt = $pdo->prepare("SELECT DISTINCT id_tournoi FROM tournoi_equipe WHERE id_equipe IN ($placeholders)");
-        $stmt->execute($playerTeamIds);
-        $registeredTournamentIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
-    } catch (PDOException $e) {
-        error_log('Player tournaments registrations error: ' . $e->getMessage());
-        $registeredTournamentIds = [];
-    }
-}
-
-$availableTerrains = fetchAllSafe(
-    $pdo,
-    "SELECT id_terrain, nom_te, ville, categorie
-     FROM terrain
-     ORDER BY nom_te ASC"
-);
-
-$tournamentsRaw = fetchAllSafe(
-    $pdo,
-    "SELECT 
-        t.id_tournoi,
-        t.nom_t,
-        t.date_debut,
-        t.date_fin,
-        t.size,
-        t.description,
-        t.statut,
-        t.prix_inscription,
-        t.regles,
-        t.email_organisateur,
-        t.id_terrain,
-        tr.nom_te AS terrain_nom,
-        tr.ville,
-        tr.localisation,
-        tr.image AS terrain_image,
-        COALESCE((
-            SELECT COUNT(*) FROM tournoi_equipe te WHERE te.id_tournoi = t.id_tournoi
-        ), 0) AS nb_inscrits
-     FROM tournoi t
-     LEFT JOIN terrain tr ON t.id_terrain = tr.id_terrain
-     ORDER BY t.date_debut ASC, t.id_tournoi DESC"
-);
-
-$grouped = [
-    'upcoming' => [],
-    'ongoing' => [],
-    'completed' => [],
-    'cancelled' => []
-];
-$allTournaments = [];
-
-foreach ($tournamentsRaw as $row) {
-    $start = !empty($row['date_debut']) ? new DateTimeImmutable($row['date_debut']) : null;
-    $end = !empty($row['date_fin']) ? new DateTimeImmutable($row['date_fin']) : null;
-    [$statusKey, $statusLabel] = resolveStatus($row['statut'] ?? null, $start, $end);
-
-    $maxTeams = isset($row['size']) ? max(0, (int) $row['size']) : 0;
-    $registeredCount = isset($row['nb_inscrits']) ? (int) $row['nb_inscrits'] : 0;
-    $remainingSlots = $maxTeams > 0 ? max(0, $maxTeams - $registeredCount) : null;
-    $progressPercent = $maxTeams > 0 ? (int) round(min(100, ($registeredCount / $maxTeams) * 100)) : 0;
-    $isRegistered = in_array((int) $row['id_tournoi'], $registeredTournamentIds, true);
-    $city = $row['ville'] ?? '';
-    $searchIndex = trim(mb_strtolower(($row['nom_t'] ?? '') . ' ' . ($row['terrain_nom'] ?? '') . ' ' . ($row['description'] ?? ''), 'UTF-8'));
-    $daysUntil = computeDaysUntil($start);
-
-    $enriched = [
-        'id' => (int) $row['id_tournoi'],
-        'name' => $row['nom_t'] ?? 'Tournoi sans nom',
-        'statusKey' => $statusKey,
-        'statusLabel' => $statusLabel,
-        'start' => $start ? $start->format('Y-m-d') : null,
-        'end' => $end ? $end->format('Y-m-d') : null,
-        'dateRangeLabel' => formatDateRangeLabel($start, $end),
-        'daysUntil' => $daysUntil,
-        'maxTeams' => $maxTeams,
-        'registeredTeams' => $registeredCount,
-        'remainingSlots' => $remainingSlots,
-        'progressPercent' => $progressPercent,
-        'priceLabel' => formatPriceLabel($row['prix_inscription'] ?? null),
-        'rawPrice' => $row['prix_inscription'] ?? null,
-        'description' => $row['description'] ?? '',
-        'rules' => $row['regles'] ?? '',
-        'terrainName' => $row['terrain_nom'] ?? 'Terrain à confirmer',
-        'terrainLocation' => $row['localisation'] ?? '',
-        'terrainCity' => $city,
-        'terrainImage' => $row['terrain_image'] ?? '',
-        'terrainId' => $row['id_terrain'] ?? null,
-        'organizer' => $row['email_organisateur'] ?? '',
-        'isRegistered' => $isRegistered,
-        'isFull' => $remainingSlots !== null ? $remainingSlots <= 0 : false,
-        'searchIndex' => $searchIndex,
-    ];
-
-    $grouped[$statusKey][] = $enriched;
-    $allTournaments[] = $enriched;
-}
-
-$counts = [
-    'upcoming' => count($grouped['upcoming']),
-    'ongoing' => count($grouped['ongoing']),
-    'my' => count(array_unique($registeredTournamentIds)),
-    'completed' => count($grouped['completed']),
-];
+$playerTeams = $tournamentData['playerTeams'];
+$availableTerrains = $tournamentData['availableTerrains'];
+$grouped = $tournamentData['grouped'];
+$allTournaments = $tournamentData['allTournaments'];
+$counts = $tournamentData['counts'];
+$dataVersion = $tournamentData['dataVersion'];
 
 $pageData = [
+    'playerHasTeams' => !empty($playerTeams),
     'endpoints' => [
         'create' => '../../actions/player/tournament/add_tournament.php',
         'join' => '../../actions/player/tournament/join_tournament.php',
     ],
+    'refreshEndpoint' => '../../actions/player/tournament/get_tournaments.php',
+    'pollIntervalMs' => 1000,
+    'dataVersion' => $dataVersion,
 ];
 ?>
 <!DOCTYPE html>
@@ -314,7 +68,7 @@ $pageData = [
                 <button id="openCreateModal"
                         class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700 transition-colors">
                     <i class="fas fa-plus"></i>
-                    Créer un tournoi
+                    Demander un tournoi
                 </button>
             </div>
         </div>
@@ -327,7 +81,7 @@ $pageData = [
                         <i class="fas fa-calendar-day"></i>
                     </span>
                 </div>
-                <div class="text-3xl font-bold text-gray-900"><?php echo $counts['upcoming']; ?></div>
+                <div class="text-3xl font-bold text-gray-900" data-count="upcoming"><?php echo $counts['upcoming']; ?></div>
                 <p class="text-sm text-gray-500 mt-2">Tournois programmés</p>
             </div>
             <div class="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
@@ -337,7 +91,7 @@ $pageData = [
                         <i class="fas fa-stopwatch"></i>
                     </span>
                 </div>
-                <div class="text-3xl font-bold text-gray-900"><?php echo $counts['ongoing']; ?></div>
+                <div class="text-3xl font-bold text-gray-900" data-count="ongoing"><?php echo $counts['ongoing']; ?></div>
                 <p class="text-sm text-gray-500 mt-2">Compétitions actives</p>
             </div>
             <div class="bg-white border border-amber-100 rounded-2xl p-5 shadow-sm">
@@ -347,7 +101,7 @@ $pageData = [
                         <i class="fas fa-users"></i>
                     </span>
                 </div>
-                <div class="text-3xl font-bold text-gray-900"><?php echo $counts['my']; ?></div>
+                <div class="text-3xl font-bold text-gray-900" data-count="my"><?php echo $counts['my']; ?></div>
                 <p class="text-sm text-gray-500 mt-2">Tournois avec vos équipes</p>
             </div>
             <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -357,7 +111,7 @@ $pageData = [
                         <i class="fas fa-flag-checkered"></i>
                     </span>
                 </div>
-                <div class="text-3xl font-bold text-gray-900"><?php echo $counts['completed']; ?></div>
+                <div class="text-3xl font-bold text-gray-900" data-count="completed"><?php echo $counts['completed']; ?></div>
                 <p class="text-sm text-gray-500 mt-2">Tournois clôturés</p>
             </div>
         </section>
@@ -439,8 +193,8 @@ $pageData = [
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Créer un tournoi</h2>
-                    <p class="text-sm text-gray-500 mt-1">Proposez votre propre compétition à la communauté</p>
+                    <h2 class="text-2xl font-bold text-gray-900">Créer une demande de tournoi</h2>
+                    <p class="text-sm text-gray-500 mt-1">Envoyez une demande au responsable du terrain pour créer un tournoi</p>
                 </div>
                 <button class="text-gray-400 hover:text-gray-600 text-2xl leading-none" data-close-modal="createTournamentModal">&times;</button>
             </div>
@@ -472,10 +226,10 @@ $pageData = [
                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Terrain</label>
-                        <select name="id_terrain"
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Terrain *</label>
+                        <select name="id_terrain" required
                                 class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition appearance-none">
-                            <option value="">À confirmer</option>
+                            <option value="">Sélectionner un terrain...</option>
                             <?php foreach ($availableTerrains as $terrain): ?>
                                 <option value="<?php echo (int) $terrain['id_terrain']; ?>">
                                     <?php
@@ -510,7 +264,7 @@ $pageData = [
                     </button>
                     <button type="submit" id="createTournamentSubmit"
                             class="px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition">
-                        Valider le tournoi
+                        Envoyer la demande
                     </button>
                 </div>
             </form>
@@ -585,11 +339,12 @@ $pageData = [
 
     <script>
         window.TOURNAMENT_DETAILS = <?php echo json_encode($allTournaments, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-        window.TOURNAMENT_PAGE_DATA = <?php echo json_encode([
-            'playerHasTeams' => !empty($playerTeams),
-            'endpoints' => $pageData['endpoints'],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        window.TOURNAMENT_GROUPED = <?php echo json_encode($grouped, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        window.TOURNAMENT_COUNTS = <?php echo json_encode($counts, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        window.TOURNAMENT_PAGE_DATA = <?php echo json_encode($pageData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
+    <!-- Universal Sync Manager - Load BEFORE other scripts -->
+    <script src="../../assets/js/sync-manager.js"></script>
     <script src="../../assets/js/player/tournaments.js"></script>
 </body>
 

@@ -56,14 +56,40 @@ try {
     }
     
     
-    $sql .= " ORDER BY t.date_debut DESC, t.id_tournoi DESC";
+    $sql .= " ORDER BY t.id_tournoi DESC";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $tournois = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Create a hash of the data to detect changes
+    $dataHash = md5(json_encode($tournois));
+    
+    // Get actual modification timestamp
+    $lastUpdateSql = "SELECT GREATEST(
+        COALESCE((SELECT MAX(UNIX_TIMESTAMP(NOW())) FROM tournoi LIMIT 1), 0),
+        COALESCE((SELECT MAX(UNIX_TIMESTAMP(NOW())) FROM tournoi_equipe LIMIT 1), 0),
+        COALESCE((SELECT MAX(UNIX_TIMESTAMP(NOW())) FROM demande_tournoi LIMIT 1), 0)
+    ) as last_update";
+    
+    try {
+        $lastUpdateStmt = $pdo->query($lastUpdateSql);
+        $lastUpdateRow = $lastUpdateStmt->fetch(PDO::FETCH_ASSOC);
+        $lastUpdate = $lastUpdateRow['last_update'] ?? time();
+    } catch (PDOException $e) {
+        // If query fails, use current timestamp
+        $lastUpdate = time();
+    }
+    
     http_response_code(200);
-    echo json_encode(['success' => true, 'tournois' => $tournois, 'count' => count($tournois)]);
+    echo json_encode([
+        'success' => true, 
+        'tournois' => $tournois, 
+        'count' => count($tournois),
+        'last_update' => $lastUpdate,
+        'data_hash' => $dataHash,
+        'timestamp' => time()
+    ]);
     
 } catch (PDOException $e) {
     error_log("Error get_tournois: " . $e->getMessage());

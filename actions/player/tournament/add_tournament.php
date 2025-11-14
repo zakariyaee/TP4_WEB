@@ -55,13 +55,24 @@ if (!empty($errors)) {
     exit;
 }
 
+// Vérifier que le terrain existe et récupérer le responsable si un terrain est sélectionné
+$idResponsable = null;
 if ($idTerrain) {
     try {
-        $stmt = $pdo->prepare('SELECT id_terrain FROM terrain WHERE id_terrain = :id');
+        $stmt = $pdo->prepare('SELECT id_terrain, id_responsable FROM terrain WHERE id_terrain = :id');
         $stmt->execute([':id' => $idTerrain]);
-        if (!$stmt->fetch()) {
+        $terrain = $stmt->fetch();
+        if (!$terrain) {
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Terrain introuvable.']);
+            exit;
+        }
+        $idResponsable = $terrain['id_responsable'] ?? null;
+        
+        // Si un terrain est sélectionné, il doit avoir un responsable
+        if (!$idResponsable) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Ce terrain n\'a pas de responsable assigné.']);
             exit;
         }
     } catch (PDOException $e) {
@@ -70,18 +81,11 @@ if ($idTerrain) {
         echo json_encode(['success' => false, 'message' => 'Erreur lors de la vérification du terrain.']);
         exit;
     }
-}
-
-$startDateImmutable = new DateTimeImmutable($dateDebut);
-$endDateImmutable = new DateTimeImmutable($dateFin);
-$now = new DateTimeImmutable('now');
-
-if ($now < $startDateImmutable) {
-    $statut = 'planifie';
-} elseif ($now > $endDateImmutable) {
-    $statut = 'termine';
 } else {
-    $statut = 'en_cours';
+    // Si aucun terrain n'est sélectionné, la demande ne peut pas être créée
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Vous devez sélectionner un terrain pour créer une demande de tournoi.']);
+    exit;
 }
 
 $prixValue = null;
@@ -92,72 +96,48 @@ if ($prixInscription !== null && $prixInscription !== '') {
     }
 }
 
+// Créer une demande de tournoi au lieu d'un tournoi directement
 try {
-    $pdo->beginTransaction();
+    $sql = "INSERT INTO demande_tournoi (
+                nom_t, date_debut, date_fin, size, description, regles, 
+                prix_inscription, id_terrain, email_organisateur, id_responsable, statut
+            ) VALUES (
+                :nom, :date_debut, :date_fin, :size, :description, :regles,
+                :prix, :id_terrain, :organisateur, :responsable, 'en_attente'
+            )";
 
-    $baseParams = [
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
         ':nom' => $nomTournoi,
         ':date_debut' => $dateDebut,
         ':date_fin' => $dateFin,
         ':size' => $size,
         ':description' => $description !== '' ? $description : null,
-        ':statut' => $statut,
+        ':regles' => $regles !== '' ? $regles : null,
+        ':prix' => $prixValue,
         ':id_terrain' => $idTerrain,
-    ];
-
-    $variantParams = [
-        [
-            'sql' => "INSERT INTO tournoi (nom_t, date_debut, date_fin, size, description, statut, id_terrain, email_organisateur, prix_inscription, regles)
-                      VALUES (:nom, :date_debut, :date_fin, :size, :description, :statut, :id_terrain, :organisateur, :prix, :regles)",
-            'params' => $baseParams + [
                 ':organisateur' => $_SESSION['user_email'],
-                ':prix' => $prixValue,
-                ':regles' => $regles !== '' ? $regles : null,
-            ],
-        ],
-        [
-            'sql' => "INSERT INTO tournoi (nom_t, date_debut, date_fin, size, description, statut, id_terrain, prix_inscription, regles)
-                      VALUES (:nom, :date_debut, :date_fin, :size, :description, :statut, :id_terrain, :prix, :regles)",
-            'params' => $baseParams + [
-                ':prix' => $prixValue,
-                ':regles' => $regles !== '' ? $regles : null,
-            ],
-        ],
-        [
-            'sql' => "INSERT INTO tournoi (nom_t, date_debut, date_fin, size, description, statut, id_terrain)
-                      VALUES (:nom, :date_debut, :date_fin, :size, :description, :statut, :id_terrain)",
-            'params' => $baseParams,
-        ],
-    ];
+        ':responsable' => $idResponsable
+    ]);
 
-    $inserted = false;
-    foreach ($variantParams as $variant) {
-        try {
-            $stmt = $pdo->prepare($variant['sql']);
-            $stmt->execute($variant['params']);
-            $inserted = true;
-            break;
-        } catch (PDOException $e) {
-            if ($e->getCode() === '42S22' || stripos($e->getMessage(), 'Unknown column') !== false) {
-                continue;
-            }
-            throw $e;
-        }
-    }
-
-    if (!$inserted) {
-        throw new PDOException('Impossible de créer le tournoi (colonnes incompatibles).');
-    }
-
-    $pdo->commit();
     http_response_code(201);
-    echo json_encode(['success' => true, 'message' => 'Votre tournoi a été créé avec succès.']);
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Votre demande de tournoi a été envoyée au responsable du terrain. Vous serez notifié une fois la demande traitée.'
+    ]);
 } catch (PDOException $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-    error_log('Player add tournament error: ' . $e->getMessage());
+    error_log('Player add tournament request error: ' . $e->getMessage());
+    
+    // Vérifier si c'est une erreur de table manquante
+    if ($e->getCode() === '42S02' || stripos($e->getMessage(), "doesn't exist") !== false || stripos($e->getMessage(), "Unknown table") !== false) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Erreur : la table demande_tournoi n\'existe pas. Veuillez exécuter le script SQL de création.'
+        ]);
+    } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Erreur lors de la création du tournoi.']);
+        echo json_encode(['success' => false, 'message' => 'Erreur lors de la création de la demande de tournoi.']);
+    }
 }
 

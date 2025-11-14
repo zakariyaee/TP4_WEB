@@ -1,6 +1,26 @@
 (() => {
     const pageData = window.TOURNAMENT_PAGE_DATA || {};
-    const tournaments = window.TOURNAMENT_DETAILS || [];
+    const defaultGrouped = {
+        upcoming: [],
+        ongoing: [],
+        completed: [],
+        cancelled: []
+    };
+    const defaultCounts = {
+        upcoming: 0,
+        ongoing: 0,
+        my: 0,
+        completed: 0
+    };
+    const refreshEndpoint = pageData.refreshEndpoint || null;
+    let dataVersion = pageData.dataVersion || null;
+    let groupedData = { ...defaultGrouped, ...(window.TOURNAMENT_GROUPED || {}) };
+    let counts = { ...defaultCounts, ...(window.TOURNAMENT_COUNTS || {}) };
+    let tournaments = window.TOURNAMENT_DETAILS || [];
+    let isRefreshing = false;
+    
+    // Sync configuration
+    const SYNC_ENABLED = typeof window.SyncManager !== 'undefined';
 
     const searchInput = document.getElementById('searchTournament');
     const tabs = document.querySelectorAll('.tournoi-tab');
@@ -18,6 +38,180 @@
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/\s+/g, ' ')
             .trim();
+    };
+
+    const escapeHtml = (value) => {
+        if (value === undefined || value === null) {
+            return '';
+        }
+        const div = document.createElement('div');
+        div.textContent = String(value);
+        return div.innerHTML;
+    };
+
+    const statusBadgeClassFor = (statusKey) => {
+        switch (statusKey) {
+            case 'ongoing':
+                return 'bg-emerald-100 text-emerald-700';
+            case 'completed':
+                return 'bg-gray-100 text-gray-600';
+            case 'cancelled':
+                return 'bg-red-100 text-red-700';
+            default:
+                return 'bg-blue-100 text-blue-700';
+        }
+    };
+
+    const truncate = (text, max = 220) => {
+        if (!text) {
+            return '';
+        }
+        const trimmed = String(text).trim();
+        return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
+    };
+
+    const buildTournamentCard = (tournament) => {
+        const id = Number(tournament.id) || 0;
+        const statusKey = tournament.statusKey || 'upcoming';
+        const statusLabel = tournament.statusLabel || '';
+        const searchValue = tournament.searchIndex || '';
+        const terrainName = tournament.terrainName || 'Terrain à confirmer';
+        const terrainCity = tournament.terrainCity || '';
+        const terrainSubtitle = [terrainName, terrainCity].filter(Boolean).join(' · ');
+        const terrainLocation = tournament.terrainLocation || '';
+        const imagePath = tournament.terrainImage
+            ? `../../assets/images/terrains/${encodeURIComponent(tournament.terrainImage)}`
+            : null;
+        const remainingSlots = typeof tournament.remainingSlots === 'number' ? tournament.remainingSlots : null;
+        const remainingLabel = remainingSlots !== null
+            ? `${remainingSlots} place${remainingSlots > 1 ? 's' : ''} restantes`
+            : null;
+        const maxTeamsLabel = tournament.maxTeams ? `${tournament.maxTeams}` : null;
+        const daysUntil = typeof tournament.daysUntil === 'number' ? tournament.daysUntil : null;
+        let daysUntilLabel = null;
+        if (daysUntil !== null && statusKey === 'upcoming') {
+            daysUntilLabel = daysUntil === 0 ? 'Aujourd’hui' : `J-${daysUntil}`;
+        }
+        const priceLabel = tournament.priceLabel || 'Gratuit';
+        const descriptionExcerpt = truncate(tournament.description, 220);
+        const hasDescription = Boolean(descriptionExcerpt);
+        const progressPercent = Number(tournament.progressPercent) || 0;
+        const showProgress = Number(tournament.maxTeams) > 0;
+        const isRegistered = Boolean(tournament.isRegistered);
+        const isFull = Boolean(tournament.isFull);
+
+        return `
+            <article
+                class="tournoi-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition duration-300 flex flex-col"
+                data-status="${escapeHtml(statusKey)}"
+                data-search="${escapeHtml(searchValue)}"
+                data-tournament-id="${id}"
+            >
+                <div class="relative h-48">
+                    ${imagePath
+                        ? `<img src="${imagePath}" alt="Terrain du tournoi" class="w-full h-full object-cover">`
+                        : `<div class="w-full h-full bg-gradient-to-br from-emerald-500 via-green-600 to-slate-700 flex items-center justify-center">
+                                <i class="fas fa-futbol text-white text-6xl opacity-80"></i>
+                            </div>`}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+
+                    <div class="absolute top-4 right-4 flex flex-wrap gap-2 justify-end">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold backdrop-blur bg-white/90 ${statusBadgeClassFor(statusKey)}">
+                            ${escapeHtml(statusLabel)}
+                        </span>
+                        ${isRegistered ? `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white shadow">
+                            <i class="fas fa-check mr-1"></i> Inscrit
+                        </span>` : ''}
+                        ${daysUntilLabel ? `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 shadow">
+                            ${escapeHtml(daysUntilLabel)}
+                        </span>` : ''}
+                    </div>
+
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 class="text-lg font-semibold">${escapeHtml(tournament.name || 'Tournoi sans nom')}</h3>
+        <p class="text-sm text-white/80 mt-1">${escapeHtml(terrainSubtitle)}</p>
+                    </div>
+                </div>
+
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="space-y-2 text-sm text-gray-600 mb-5">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar text-emerald-600"></i>
+                            <span>${escapeHtml(tournament.dateRangeLabel || '')}</span>
+                        </div>
+                        ${terrainLocation ? `
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt text-emerald-600"></i>
+                            <span class="truncate">${escapeHtml(terrainLocation)}</span>
+                        </div>` : ''}
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-users text-emerald-600"></i>
+                            <span>
+                                ${Number(tournament.registeredTeams) || 0}
+                                ${maxTeamsLabel ? `/ ${escapeHtml(maxTeamsLabel)}` : ''}
+                                équipes inscrites
+                            </span>
+                        </div>
+                    </div>
+
+                    ${hasDescription ? `
+                    <p class="text-sm text-gray-600 mb-5">
+                        ${escapeHtml(descriptionExcerpt)}
+                    </p>` : ''}
+
+                    ${showProgress ? `
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between text-xs font-semibold text-gray-500 mb-1">
+                            <span>Progression</span>
+                            <span>${progressPercent}%</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-emerald-500 to-green-600" style="width: ${progressPercent}%;"></div>
+                        </div>
+                    </div>` : ''}
+
+                    <div class="mt-auto flex items-center justify-between">
+                        <div>
+                            <div class="text-xl font-bold text-emerald-600">
+                                ${escapeHtml(priceLabel)}
+                            </div>
+                            ${remainingLabel ? `<p class="text-xs text-gray-500 mt-1">${escapeHtml(remainingLabel)}</p>` : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button"
+                                    class="details-button px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition text-sm font-semibold"
+                                    data-tournament-id="${id}">
+                                Détails
+                            </button>
+                            ${statusKey === 'cancelled' ? `
+                                <span class="px-4 py-2 rounded-xl bg-red-100 text-red-600 text-sm font-semibold">Annulé</span>
+                            ` : statusKey === 'completed' ? `
+                                <span class="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold">Terminé</span>
+                            ` : isRegistered ? `
+                                <span class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-semibold">
+                                    <i class="fas fa-check mr-1"></i> Inscrit
+                                </span>
+                            ` : isFull ? `
+                                <span class="px-4 py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Complet</span>
+                            ` : `
+                                <button type="button"
+                                        class="join-button px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition"
+                                        data-tournament-id="${id}">
+                                    S'inscrire
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </article>
+        `;
+    };
+
+    const flattenTournaments = (data) => {
+        return ['upcoming', 'ongoing', 'completed', 'cancelled'].reduce((acc, key) => {
+            const items = Array.isArray(data[key]) ? data[key] : [];
+            return acc.concat(items);
+        }, []);
     };
 
     const debounce = (fn, delay = 250) => {
@@ -120,6 +314,212 @@
             emptyState.classList.toggle('hidden', visibleCount > 0);
         }
     };
+
+    const updateCountsDisplay = (nextCounts = {}) => {
+        counts = { ...counts, ...nextCounts };
+        ['upcoming', 'ongoing', 'my', 'completed'].forEach((key) => {
+            const el = document.querySelector(`[data-count="${key}"]`);
+            if (el) {
+                el.textContent = counts[key] ?? 0;
+            }
+        });
+    };
+
+    const renderTournamentSections = (data) => {
+        const merged = { ...defaultGrouped, ...data };
+        ['upcoming', 'ongoing', 'completed'].forEach((status) => {
+            const section = document.getElementById(`section-${status}`);
+            if (!section) {
+                return;
+            }
+            const wrapper = section.querySelector('[data-cards-wrapper]');
+            const emptyState = section.querySelector('[data-empty-state]');
+            const list = Array.isArray(merged[status]) ? merged[status] : [];
+
+            if (wrapper) {
+                if (list.length === 0) {
+                    wrapper.classList.add('hidden');
+                    wrapper.innerHTML = '';
+                } else {
+                    wrapper.classList.remove('hidden');
+                    
+                    // Smart update: only update changed cards
+                    const existingCards = wrapper.querySelectorAll('[data-tournament-id]');
+                    const existingIds = new Set();
+                    existingCards.forEach(card => existingIds.add(parseInt(card.dataset.tournamentId)));
+                    
+                    const newIds = new Set(list.map(t => t.id));
+                    
+                    // Remove deleted tournaments
+                    existingIds.forEach(id => {
+                        if (!newIds.has(id)) {
+                            const card = wrapper.querySelector(`[data-tournament-id="${id}"]`);
+                            if (card) card.remove();
+                        }
+                    });
+                    
+                    // Update or add tournaments
+                    list.forEach((tournament, index) => {
+                        const existingCard = wrapper.querySelector(`[data-tournament-id="${tournament.id}"]`);
+                        const newCardHtml = buildTournamentCard(tournament);
+                        
+                        if (existingCard) {
+                            // Update existing card only if data changed
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = newCardHtml;
+                            const newCard = tempDiv.firstElementChild;
+                            
+                            // Check if content actually changed before replacing
+                            if (existingCard.outerHTML !== newCard.outerHTML) {
+                                existingCard.replaceWith(newCard);
+                            }
+                        } else {
+                            // Add new card at correct position
+                            if (index === 0 || wrapper.children.length === 0) {
+                                wrapper.insertAdjacentHTML('afterbegin', newCardHtml);
+                            } else if (index >= wrapper.children.length) {
+                                wrapper.insertAdjacentHTML('beforeend', newCardHtml);
+                            } else {
+                                const referenceCard = wrapper.children[index];
+                                referenceCard.insertAdjacentHTML('beforebegin', newCardHtml);
+                            }
+                        }
+                    });
+                }
+            }
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', list.length > 0);
+            }
+        });
+        groupedData = merged;
+        tournaments = flattenTournaments(groupedData);
+        window.TOURNAMENT_DETAILS = tournaments;
+        applyFilters();
+    };
+
+    const syncJoinButtonState = () => {
+        const joinSubmit = document.getElementById('joinTournamentSubmit');
+        if (!joinSubmit) {
+            return;
+        }
+        const canJoin = !!pageData.playerHasTeams;
+        joinSubmit.disabled = !canJoin;
+        joinSubmit.classList.toggle('opacity-50', !canJoin);
+        joinSubmit.classList.toggle('cursor-not-allowed', !canJoin);
+    };
+
+    const fetchLatestTournaments = async (force = false) => {
+        if (!refreshEndpoint) {
+            return;
+        }
+        if (isRefreshing) {
+            if (force) {
+                setTimeout(() => fetchLatestTournaments(true), 250);
+            }
+            return;
+        }
+        isRefreshing = true;
+        try {
+            const response = await fetch(refreshEndpoint, {
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            if (!payload.success) {
+                return;
+            }
+            const incomingVersion = payload.dataVersion || null;
+            if (!force && dataVersion && incomingVersion && incomingVersion === dataVersion) {
+                return;
+            }
+            dataVersion = incomingVersion;
+            pageData.dataVersion = dataVersion;
+
+            const incomingGrouped = payload.grouped || {};
+            const incomingCounts = payload.counts || {};
+            renderTournamentSections({ ...defaultGrouped, ...incomingGrouped });
+            updateCountsDisplay(incomingCounts);
+
+            if (typeof payload.playerHasTeams === 'boolean') {
+                pageData.playerHasTeams = payload.playerHasTeams;
+                syncJoinButtonState();
+            }
+            
+            // Store last update time
+            window.lastTournamentsLoadTime = Date.now();
+        } catch (error) {
+            console.warn('Impossible de rafraîchir les tournois', error);
+        } finally {
+            isRefreshing = false;
+        }
+    };
+
+    /**
+     * Setup universal sync system using SyncManager
+     */
+    const setupUniversalSync = () => {
+        if (!SYNC_ENABLED) {
+            console.warn('[Tournaments] SyncManager not available, falling back to basic refresh');
+            fetchLatestTournaments();
+            return;
+        }
+
+        // Register tournaments channel
+        window.SyncManager.register('tournaments', (data) => {
+            console.log('[Tournaments] Sync update received:', data);
+            fetchLatestTournaments(true);
+        }, {
+            pollInterval: 1000, // Poll every 1 second for real-time sync
+            storageKey: 'sync_tournaments_update',
+            checkEndpoint: refreshEndpoint
+        });
+
+        // Register requests channel (player creates requests)
+        window.SyncManager.register('tournament_requests', (data) => {
+            console.log('[Tournaments] Request update received:', data);
+            fetchLatestTournaments(true);
+        }, {
+            pollInterval: 1000, // Poll every 1 second
+            storageKey: 'sync_tournament_requests_update'
+        });
+
+        console.log('[Tournaments] Universal sync enabled');
+    };
+
+    /**
+     * Trigger tournaments update (notify all tabs/browsers)
+     */
+    const triggerTournamentsUpdate = () => {
+        if (SYNC_ENABLED) {
+            window.SyncManager.notify('tournaments', {
+                source: 'player_action',
+                action: 'update'
+            });
+        }
+        // Always refresh locally
+        fetchLatestTournaments(true);
+    };
+
+    /**
+     * Trigger request update (notify all tabs/browsers)
+     */
+    const triggerRequestUpdate = () => {
+        if (SYNC_ENABLED) {
+            window.SyncManager.notify('tournament_requests', {
+                source: 'player_action',
+                action: 'create_request'
+            });
+        }
+    };
+
+    // Initialize universal sync
+    setupUniversalSync();
+    fetchLatestTournaments();
+
+    tournaments = flattenTournaments(groupedData);
+    window.TOURNAMENT_DETAILS = tournaments;
 
     const openModal = (modalId) => {
         const modal = document.getElementById(modalId);
@@ -295,7 +695,7 @@
 
             createSubmit.disabled = true;
             const originalLabel = createSubmit.innerHTML;
-            createSubmit.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Création...';
+            createSubmit.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Envoi de la demande...';
 
             fetch(pageData.endpoints.create, {
                 method: 'POST',
@@ -309,15 +709,23 @@
                     } catch (_) {
                         // ignore parse errors
                     }
-                    return { ok: response.ok, data };
+                    return { ok: response.ok, status: response.status, data };
                 })
-                .then(({ ok, data }) => {
-                    if (ok && (data.success ?? true)) {
-                        showToast(data.message || 'Tournoi créé avec succès', 'success');
+                .then(({ ok, status, data }) => {
+                    if ((ok || status === 201) && (data.success ?? true)) {
+                        showToast(data.message || 'Demande de tournoi envoyée avec succès', 'success');
+                        
+                        // Notify all tabs/browsers about the new request
+                        triggerRequestUpdate();
+                        
+                        // Also trigger tournaments update (in case request is auto-approved)
+                        triggerTournamentsUpdate();
+                        
+                        // Reset form and close modal
+                        createForm.reset();
                         closeModal('createTournamentModal');
-                        setTimeout(() => window.location.reload(), 900);
                     } else {
-                        showToast(data.message || 'Impossible de créer le tournoi', 'error');
+                        showToast(data.message || 'Impossible d\'envoyer la demande', 'error');
                     }
                 })
                 .catch(() => {
@@ -382,7 +790,9 @@
                     if (ok && (data.success ?? true)) {
                         showToast(data.message || 'Inscription confirmée', 'success');
                         closeModal('joinTournamentModal');
-                        setTimeout(() => window.location.reload(), 900);
+                        
+                        // Notify all tabs/browsers about the tournament update
+                        triggerTournamentsUpdate();
                     } else {
                         showToast(data.message || 'Impossible de vous inscrire', 'error');
                     }
@@ -442,7 +852,12 @@
         }
     });
 
-    // Initial rendering
+    // Initial rendering & live updates
     setActiveTab(activeSectionId, document.querySelector(`.tournoi-tab[data-target="${activeSectionId}"]`));
+    renderTournamentSections(groupedData);
+    updateCountsDisplay(counts);
+    syncJoinButtonState();
+    
+    // localStorage-based refresh is already initialized above
 })();
 

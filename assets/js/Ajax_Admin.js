@@ -140,5 +140,5 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('📊 Initialisation du système de statistiques AJAX');
   // Première mise à jour immédiate
   Ajax_Dashbord_Statistique();
-})
-setInterval(Ajax_Dashbord_Statistique, 3000);
+});
+setInterval(Ajax_Dashbord_Statistique, 1000);

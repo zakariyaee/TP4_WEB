@@ -361,6 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Initialisation de la gestion des factures');
     loadFactures();
     
-    // Actualisation automatique toutes les 60 secondes
-    setInterval(loadFactures, 60000);
+    // Actualisation automatique toutes les secondes
+    setInterval(loadFactures, 1000);
 });

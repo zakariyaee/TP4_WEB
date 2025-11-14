@@ -4,6 +4,9 @@ let tournamentsCache = new Map();
 let lastLoadTime = 0;
 let isLoading = false;
 
+// Sync configuration
+const SYNC_ENABLED = typeof window.SyncManager !== 'undefined';
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('tournoisContainer');
@@ -15,11 +18,71 @@ document.addEventListener('DOMContentLoaded', function() {
     loadFields();
     setupEventListeners();
     
-    // Clean cache every 5 minutes
+    // Setup universal sync system
+    setupUniversalSync();
+    
+    // Clean cache periodically
+    setupCacheCleaner();
+    });
+
+/**
+ * Setup universal sync system using SyncManager
+ */
+function setupUniversalSync() {
+    if (!SYNC_ENABLED) {
+        console.warn('[Tournament Admin] SyncManager not available, falling back to basic mode');
+        return;
+    }
+
+    // Register tournaments channel
+    window.SyncManager.register('tournaments', (data) => {
+        console.log('[Tournament Admin] Sync update received:', data);
+        // Don't clear cache, let loadTournaments compare hashes
+        loadTournaments(true);
+    }, {
+        pollInterval: 2000, // Poll every 2 seconds (reduced frequency for calmer interface)
+        storageKey: 'sync_tournaments_update',
+        checkEndpoint: '../../actions/admin-manager/tournament/get_tournaments.php'
+    });
+
+    // Register requests channel (player creates requests, admin approves)
+    window.SyncManager.register('tournament_requests', (data) => {
+        console.log('[Tournament Admin] Request update received:', data);
+        // Requests can create new tournaments when approved
+        loadTournaments(true);
+    }, {
+        pollInterval: 2000, // Poll every 2 seconds
+        storageKey: 'sync_tournament_requests_update'
+    });
+
+    console.log('[Tournament Admin] Universal sync enabled');
+}
+
+/**
+ * Trigger tournaments update (notify all tabs/browsers)
+ */
+function triggerTournamentsUpdate() {
+    if (SYNC_ENABLED) {
+        window.SyncManager.notify('tournaments', {
+            source: 'admin_action',
+            action: 'update'
+        });
+    }
+    // Always refresh locally
+    tournamentsCache.clear();
+    loadTournaments(true);
+}
+
+/**
+ * Setup cache cleaner
+ */
+function setupCacheCleaner() {
+    const CACHE_CLEAR_INTERVAL = 300000; // 5 minutes
+    
     setInterval(() => {
         tournamentsCache.clear();
-    }, 300000);
-});
+    }, CACHE_CLEAR_INTERVAL);
+}
 
 /**
  * Setup event listeners for search, filters and form
@@ -206,9 +269,9 @@ function loadTournaments(forceRefresh = false) {
     // Check cache first (unless force refresh)
     if (!forceRefresh && tournamentsCache.has(cacheKey)) {
         const cachedData = tournamentsCache.get(cacheKey);
-        // Use cache if data is less than 30 seconds old
-        if (Date.now() - cachedData.timestamp < 30000) {
-            displayTournaments(cachedData.tournois);
+        // Use cache if data is less than 10 seconds old
+        if (Date.now() - cachedData.timestamp < 10000) {
+            // Don't even call displayTournaments if using cache (avoid any visual update)
             return;
         }
     }
@@ -221,7 +284,11 @@ function loadTournaments(forceRefresh = false) {
 
     isLoading = true;
     lastLoadTime = now;
-    showLoader();
+    
+    // Don't show loader during sync updates to avoid visual distraction
+    if (forceRefresh) {
+        showLoader();
+    }
 
     const xhr = new XMLHttpRequest();
     // Security: encodeURIComponent prevents XSS in URL parameters
@@ -229,7 +296,10 @@ function loadTournaments(forceRefresh = false) {
 
     xhr.onload = function() {
         isLoading = false;
-        hideLoader();
+        if (forceRefresh) {
+            hideLoader();
+        }
+        
         // Error Management: Check HTTP status
         if (xhr.status === 200) {
             try {
@@ -237,13 +307,30 @@ function loadTournaments(forceRefresh = false) {
                 const response = JSON.parse(xhr.responseText);
 
                 if (response.success) {
-                    // Cache the response
-                    tournamentsCache.set(cacheKey, {
-                        tournois: response.tournois,
-                        timestamp: Date.now()
-                    });
+                    // Check if data actually changed using hash
+                    const cachedData = tournamentsCache.get(cacheKey);
+                    const oldHash = cachedData ? cachedData.hash : null;
+                    const newHash = response.data_hash;
                     
-                    displayTournaments(response.tournois);
+                    // Only update if hash changed (real data change)
+                    if (!oldHash || oldHash !== newHash) {
+                        console.log('[Tournament Admin] Data changed, updating display');
+                        
+                        const timestamp = Date.now();
+                        tournamentsCache.set(cacheKey, {
+                            tournois: response.tournois,
+                            hash: newHash,
+                            timestamp: timestamp
+                        });
+                        
+                        // Update display only when data really changed
+                        displayTournaments(response.tournois, false);
+                    } else {
+                        // Data hasn't changed, just update cache timestamp
+                        cachedData.timestamp = Date.now();
+                        tournamentsCache.set(cacheKey, cachedData);
+                        console.log('[Tournament Admin] No changes detected, skipping update');
+                    }
                 } else {
                     showNotification(response.message || 'Erreur lors du chargement des tournois', 'error');
                 }
@@ -260,7 +347,9 @@ function loadTournaments(forceRefresh = false) {
     // Error Management: Handle network errors
     xhr.onerror = function() {
         isLoading = false;
-        hideLoader();
+        if (forceRefresh) {
+            hideLoader();
+        }
         showNotification('Erreur réseau', 'error');
     };
 
@@ -272,12 +361,14 @@ function loadTournaments(forceRefresh = false) {
  * 
  * Renders tournament list in card format with proper escaping to prevent XSS.
  * Shows empty state if no tournaments found.
+ * ALWAYS uses smart update - never replaces entire list for better UX.
  * Partner: Security - All tournament data is HTML escaped before insertion.
  * 
  * @param {Array} tournois - Array of tournament objects
+ * @param {boolean} forceFullRefresh - DEPRECATED: Always uses smart update now
  * @returns {void}
  */
-function displayTournaments(tournois) {
+function displayTournaments(tournois, forceFullRefresh = false) {
     const container = document.getElementById('tournoisContainer');
 
     if (tournois.length === 0) {
@@ -307,8 +398,8 @@ function displayTournaments(tournois) {
         return div.innerHTML;
     };
     
-    // Security: All tournament data is escaped before rendering
-    container.innerHTML = tournois.map(tournoi => {
+    // Build tournament card HTML
+    const buildTournamentCard = (tournoi) => {
         const nomTournoi = escapeHtml(tournoi.nom_tournoi);
         const description = escapeHtml(tournoi.description || '');
         const terrainNom = escapeHtml(tournoi.terrain_nom || 'Terrain non assigné');
@@ -373,7 +464,52 @@ function displayTournaments(tournois) {
                 </div>
             </div>
         `;
-    }).join('');
+    };
+
+    // Smart update: only update changed/new tournaments (NEVER full refresh)
+    const existingIds = new Set();
+    container.querySelectorAll('[data-tournoi-id]').forEach(card => {
+        existingIds.add(parseInt(card.dataset.tournoiId));
+    });
+
+    const newIds = new Set(tournois.map(t => t.id_tournoi));
+    
+    // Remove deleted tournaments
+    existingIds.forEach(id => {
+        if (!newIds.has(id)) {
+            const card = document.getElementById(`tournoi-card-${id}`);
+            if (card && card.parentNode) {
+                card.parentNode.removeChild(card);
+            }
+        }
+    });
+
+    // Update or add tournaments
+    tournois.forEach(tournoi => {
+        const existingCard = document.getElementById(`tournoi-card-${tournoi.id_tournoi}`);
+        const newCardHtml = buildTournamentCard(tournoi);
+        
+        if (existingCard) {
+            // ✅ Compare HTML before replacing to avoid unnecessary updates
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newCardHtml;
+            const newCard = tempDiv.firstElementChild;
+            
+            // Only replace if content actually changed
+            if (existingCard.outerHTML !== newCard.outerHTML) {
+                existingCard.parentNode.replaceChild(newCard, existingCard);
+            }
+            // else: no change, skip update to avoid flickering
+        } else {
+            // Add new card
+            if (container.children.length === 0 || container.querySelector('.col-span-full')) {
+                // Container is empty or has empty state
+                container.innerHTML = newCardHtml;
+            } else {
+                container.insertAdjacentHTML('beforeend', newCardHtml);
+            }
+        }
+    });
 }
 
 /**
@@ -653,8 +789,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         closeEditTeamModal();
                         showNotification((res && res.message) || "Équipe modifiée", 'success');
                         loadRegisteredTeams();
-                        tournamentsCache.clear();
-                        loadTournaments(true);
+                        // Trigger update to notify all tabs/browsers
+                        triggerTournamentsUpdate();
                     } else {
                         showNotification(res.message || 'Erreur de modification', 'error');
                     }
@@ -685,6 +821,8 @@ function updateTeamStatus(idEquipe) {
             if (!res || res.success) {
                 showNotification((res && res.message) || 'Statut mis à jour', 'success');
                 loadRegisteredTeams();
+                // Trigger update to notify all tabs/browsers
+                triggerTournamentsUpdate();
             } else {
                 showNotification(res.message || 'Erreur', 'error');
             }
@@ -712,8 +850,8 @@ function removeTeam(idEquipe, btnEl, skipConfirm = false) {
             if (!res || res.success) {
                 showNotification((res && res.message) || 'Équipe retirée avec succès', 'success');
                 loadRegisteredTeams();
-                tournamentsCache.clear();
-                loadTournaments(true);
+                // Trigger update to notify all tabs/browsers
+                triggerTournamentsUpdate();
             } else {
                 showNotification(res.message || 'Erreur', 'error');
             }
@@ -790,9 +928,8 @@ function handleSubmit(e) {
                 closeModal();
                 // Show success message
                 showNotification(message, 'success');
-                // Clear cache and force refresh
-                tournamentsCache.clear();
-                loadTournaments(true);
+                // Trigger update to notify all tabs/browsers
+                triggerTournamentsUpdate();
             } else {
                 showNotification((parsed && parsed.message) || 'Erreur lors de l\'enregistrement', 'error');
             }
@@ -876,9 +1013,8 @@ function confirmDelete() {
                     // Close modal first, then show success message
                     closeDeleteModal();
                     showNotification(parsed.message || 'Tournoi supprimé avec succès', 'success');
-                    // Clear cache and refresh list in background to stay consistent
-                    tournamentsCache.clear();
-                    loadTournaments(true);
+                    // Trigger update to notify all tabs/browsers
+                    triggerTournamentsUpdate();
                 } else {
                     showNotification((parsed && parsed.message) || 'Erreur lors de la suppression', 'error');
                 }
@@ -890,8 +1026,8 @@ function confirmDelete() {
                 }
                 closeDeleteModal();
                 showNotification('Tournoi supprimé avec succès', 'success');
-                tournamentsCache.clear();
-                loadTournaments(true);
+                // Trigger update to notify all tabs/browsers
+                triggerTournamentsUpdate();
             }
         } else {
             // Handle error responses

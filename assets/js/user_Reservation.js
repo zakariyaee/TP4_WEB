@@ -465,11 +465,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Charger les prochaines réservations
     fetchUpcomingReservations();
     
-    // Rafraîchissement automatique toutes les 30 secondes
+    // Rafraîchissement automatique toutes les secondes
     setInterval(() => {
         loadStatsReservationUser();
         fetchUpcomingReservations();
-    }, 3000);
+    }, 1000);
 });
 
 // ============================================

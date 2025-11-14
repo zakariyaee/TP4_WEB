@@ -55,7 +55,7 @@ try {
     // Get paginated users with optimized query
     $sql = "SELECT email, nom, prenom, num_tele, role, statut_compte, DATE_FORMAT(date_creation, '%Y-%m-%d %H:%i:%s') AS date_creation 
             FROM Utilisateur $whereClause 
-            ORDER BY FIELD(role, 'admin','responsable','joueur'), nom, prenom 
+            ORDER BY date_creation DESC, nom ASC, prenom ASC 
             LIMIT :limit OFFSET :offset";
     $stmt = $pdo->prepare($sql);
     
