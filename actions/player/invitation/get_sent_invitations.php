@@ -10,8 +10,6 @@ try {
     $email_joueur = $_SESSION['user_email'];
     
     // Récupérer les invitations ENVOYÉES par le joueur connecté
-    // La disponibilité doit être liée à l'expéditeur (celui qui envoie l'invitation)
-    // On utilise des sous-requêtes pour récupérer la disponibilité la plus proche de chaque message
     $stmt = $pdo->prepare("
         SELECT 
             dr.id_demande,
@@ -66,7 +64,8 @@ try {
                                                         AND DATE_ADD(m.date_message, INTERVAL 30 DAY)
                          ORDER BY ABS(TIMESTAMPDIFF(HOUR, d_closest.date_debut, m.date_message)) ASC
                          LIMIT 1), '%H:%i') as heure_formatted,
-            DATE_FORMAT(m.date_message, '%d/%m/%Y à %H:%i') as date_message_formatted
+            DATE_FORMAT(m.date_message, '%d/%m/%Y à %H:%i') as date_message_formatted,
+            UNIX_TIMESTAMP(dr.date_demande) as last_update_timestamp
         FROM demande_rejoindre dr
         INNER JOIN message m ON dr.id_message = m.id_message
         INNER JOIN equipe e ON dr.id_equipe = e.id_equipe
@@ -98,7 +97,8 @@ try {
         'success' => true,
         'invitations' => $invitations,
         'stats' => $stats,
-        'total' => count($invitations)
+        'total' => count($invitations),
+        'timestamp' => time()
     ]);
     
 } catch (Exception $e) {
